@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -139,10 +140,12 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
           <View style={styles.hero}>
-            <View style={styles.heroBadge}>
-              <Zap size={14} color={COLORS.accent} strokeWidth={2.5} />
-              <Text style={styles.heroBadgeText}>NextIgnition</Text>
-            </View>
+            <Image
+              source={{ uri: 'https://raw.githubusercontent.com/nextignition/public-logo/refs/heads/main/Logo%20Design/Secondary.png' }}
+              style={styles.heroLogo}
+              resizeMode="contain"
+            />
+            
             <Text style={styles.heroTitle}>Ignite the next chapter of your startup</Text>
             <Text style={styles.heroSubtitle}>
               Tap into curated capital, operator knowledge, and a private network designed for
@@ -253,6 +256,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.18)',
     ...SHADOWS.sm,
+  },
+  heroLogo: {
+    width: 200,
+    height: 80,
+    alignSelf: 'center',
+    marginBottom: SPACING.md,
   },
   heroBadge: {
     flexDirection: 'row',

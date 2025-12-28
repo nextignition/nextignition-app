@@ -1,131 +1,125 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Logo } from './Logo';
-import { COLORS, FONT_FAMILY, TYPOGRAPHY, GRADIENTS, SPACING } from '@/constants/theme';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { COLORS } from '@/constants/theme';
 
 interface SplashScreenProps {
   onFinish: () => void;
 }
 
 export function SplashScreen({ onFinish }: SplashScreenProps) {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.85)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const videoRef = useRef<Video>(null);
+  const [playbackStatus, setPlaybackStatus] = useState<AVPlaybackStatus | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [videoStarted, setVideoStarted] = useState(false);
+
+  // Ensure component is mounted before rendering Video
+  useEffect(() => {
+    const mountTimer = setTimeout(() => {
+      setMounted(true);
+    }, 100);
+
+    return () => clearTimeout(mountTimer);
+  }, []);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 900,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 6,
-        tension: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 1200,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // Check if video finished playing
+    if (playbackStatus?.isLoaded) {
+      if (playbackStatus.didJustFinish) {
+        // Video finished playing, call onFinish after a brief delay
+        setTimeout(() => {
+          onFinish();
+        }, 300);
+      } else if (
+        playbackStatus.positionMillis > 0 &&
+        playbackStatus.durationMillis !== undefined &&
+        playbackStatus.durationMillis > 0
+      ) {
+        // Check if video has reached the end (within 100ms of duration)
+        const progress = playbackStatus.positionMillis / playbackStatus.durationMillis;
+        if (progress >= 0.99) {
+          setTimeout(() => {
+            onFinish();
+          }, 300);
+        }
+      }
+    }
+  }, [playbackStatus, onFinish]);
 
-    const timer = setTimeout(() => {
-      Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 0.95,
-          duration: 500,
-        useNativeDriver: true,
-        }),
-      ]).start(() => onFinish());
-    }, 2800);
+  // Fallback: if video fails or takes too long, proceed after timeout
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!hasError) {
+        console.warn('Video timeout, proceeding to login...');
+        onFinish();
+      }
+    }, 8000); // 8 second maximum timeout
 
-    return () => clearTimeout(timer);
-  }, [fadeAnim, scaleAnim, rotateAnim, onFinish]);
+    return () => clearTimeout(timeout);
+  }, [hasError, onFinish]);
 
-  const rotate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  const handleLoad = () => {
+    // Video loaded, try to play it
+    if (videoRef.current && !videoStarted) {
+      setVideoStarted(true);
+      videoRef.current.playAsync().catch((error) => {
+        console.error('Video play error:', error);
+        setHasError(true);
+        // If video fails, proceed after a short delay
+        setTimeout(() => onFinish(), 1500);
+      });
+    }
+  };
+
+  const handleError = (error: any) => {
+    console.error('Video error:', error);
+    setHasError(true);
+    // Proceed after short delay if video fails
+    setTimeout(() => onFinish(), 1500);
+  };
+
+  if (!mounted) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
-    <LinearGradient
-      colors={GRADIENTS.navy}
-      style={styles.container}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}>
-      <Animated.View
-        style={[
-          styles.content,
-          {
-            opacity: fadeAnim,
-            transform: [
-              { scale: scaleAnim },
-              { rotate },
-            ],
-          },
-        ]}>
-        <View style={styles.logoContainer}>
-          <Logo size={96} variant="full" color={COLORS.background} />
-        </View>
-      </Animated.View>
-      <Animated.View
-        style={[
-          styles.textContainer,
-          {
-            opacity: fadeAnim,
-          },
-        ]}>
-        <Text style={styles.title}>NextIgnition</Text>
-        <Text style={styles.tagline}>Where startups meet capital</Text>
-      </Animated.View>
-    </LinearGradient>
+    <View style={styles.container}>
+      {!hasError && mounted ? (
+        <Video
+          ref={videoRef}
+          source={require('@/assets/videos/LogoAnimation-NI.mp4')}
+          style={styles.video}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay={false}
+          isLooping={false}
+          isMuted={false}
+          onLoad={handleLoad}
+          onError={handleError}
+          onPlaybackStatusUpdate={(status) => {
+            setPlaybackStatus(status);
+          }}
+        />
+      ) : (
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  content: {
-    alignItems: 'center',
-    marginBottom: SPACING.xl,
-  },
-  logoContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  textContainer: {
-    alignItems: 'center',
-    marginTop: SPACING.xl,
-  },
-  title: {
-    ...TYPOGRAPHY.display,
-    fontFamily: FONT_FAMILY.displayBold,
-    color: COLORS.background,
-    marginBottom: SPACING.xs,
-    letterSpacing: -1.2,
-  },
-  tagline: {
-    ...TYPOGRAPHY.body,
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontFamily: FONT_FAMILY.bodyMedium,
-    letterSpacing: 0.3,
+  video: {
+    width: '100%',
+    height: '100%',
   },
 });
