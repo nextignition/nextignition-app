@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
-    "slug": "bolt-expo-nativewind",
+    "name": "Next Ignition",
+    "slug": "next-ignition-project",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nextignition.app"
     },
     "web": {
       "bundler": "metro",
@@ -33,10 +34,17 @@
       "typedRoutes": true
     },
     "android": {
+      "package": "com.itsdeligh.hustlrhub",
+      "versionCode": 2,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9b3208d9-100c-40db-9d81-ef19f1570d02"
+      }
     }
   }
 }

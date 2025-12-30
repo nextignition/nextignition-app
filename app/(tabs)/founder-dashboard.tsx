@@ -332,9 +332,6 @@ export default function FounderDashboard() {
         }>
         <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={styles.heroIcon}>
-              <Building2 size={28} color={COLORS.background} strokeWidth={2} />
-            </View>
             <View style={styles.heroText}>
               <Text style={styles.heroTitle}>Welcome back, {profile?.full_name || 'Founder'}</Text>
               <Text style={styles.heroSubtitle}>
@@ -601,17 +598,18 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.85)',
   },
   statsRow: {
-    flexDirection: 'row',
-    gap: SPACING.md,
+    flexDirection: 'column',
+    gap: SPACING.sm,
   },
   statCard: {
-    flex: 1,
+    width: '100%',
+    flexDirection: 'column',
     backgroundColor: 'rgba(255,255,255,0.12)',
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   statValue: {
     fontFamily: FONT_FAMILY.displayMedium,

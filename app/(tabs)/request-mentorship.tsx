@@ -204,9 +204,6 @@ export default function RequestMentorshipScreen() {
         showsVerticalScrollIndicator={false}>
         <LinearGradient colors={GRADIENTS.accent} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={styles.heroIcon}>
-              <Award size={28} color={COLORS.background} strokeWidth={2} />
-            </View>
             <View style={styles.heroText}>
               <Text style={styles.heroTitle}>Request Mentorship</Text>
               <Text style={styles.heroSubtitle}>

@@ -153,9 +153,6 @@ export default function FundingScreen() {
     <View style={styles.headerContent}>
       <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
         <View style={styles.heroHeader}>
-          <View style={styles.heroIcon}>
-            <BarChart3 size={24} color={COLORS.background} strokeWidth={2} />
-          </View>
           <View style={styles.heroText}>
             <Text style={styles.heroTitle}>Funding Portal</Text>
             <Text style={styles.heroSubtitle}>{getSubtitle()}</Text>
@@ -167,18 +164,18 @@ export default function FundingScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{allOpportunities.length}</Text>
-            <Text style={styles.statLabel}>
+            <Text style={styles.statValue} numberOfLines={1}>{allOpportunities.length}</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>
               {isFounder ? 'Requests' : 'Total Deals'}
             </Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{activeDeals}</Text>
-            <Text style={styles.statLabel}>Active</Text>
+            <Text style={styles.statValue} numberOfLines={1}>{activeDeals}</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>Active</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{formatCurrency(totalRaised)}</Text>
-            <Text style={styles.statLabel}>Total Raised</Text>
+            <Text style={styles.statValue} numberOfLines={1}>{formatCurrency(totalRaised)}</Text>
+            <Text style={styles.statLabel} numberOfLines={1}>Total Raised</Text>
           </View>
         </View>
       </LinearGradient>
@@ -511,27 +508,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statsRow: {
-    flexDirection: 'row',
-    gap: SPACING.md,
+    flexDirection: 'column',
+    gap: SPACING.sm,
   },
   statCard: {
-    flex: 1,
+    flexDirection: 'column',
     backgroundColor: 'rgba(255,255,255,0.12)',
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
+    width: '100%',
   },
   statValue: {
     fontFamily: FONT_FAMILY.displayMedium,
     fontSize: FONT_SIZES.xl,
     color: COLORS.background,
+    textAlign: 'left',
     marginBottom: SPACING.xs / 2,
   },
   statLabel: {
     ...TYPOGRAPHY.caption,
+    fontSize: FONT_SIZES.sm,
     color: 'rgba(255,255,255,0.75)',
+    textAlign: 'left',
   },
   controls: {
     gap: SPACING.md,

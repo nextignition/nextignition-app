@@ -214,9 +214,6 @@ export default function MentorshipScreen() {
         }>
         <LinearGradient colors={GRADIENTS.navy} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={styles.heroIcon}>
-              <Award size={28} color={COLORS.accent} strokeWidth={2} />
-            </View>
             <View style={styles.heroText}>
               <Text style={styles.heroTitle}>Mentorship & Networking</Text>
               <Text style={styles.heroSubtitle}>
@@ -900,14 +897,14 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   expertActions: {
-    flexDirection: 'row',
-    gap: SPACING.md,
+    flexDirection: 'column',
+    gap: SPACING.sm,
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },
   messageButton: {
-    flex: 1,
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -924,7 +921,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
   },
   requestButton: {
-    flex: 1,
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

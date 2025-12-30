@@ -33,3 +33,10 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+.vercel
+
+# credentials
+credentials.json
+*.keystore
+*.jks
+*.pem

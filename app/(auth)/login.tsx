@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   Image,
+  TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -27,7 +28,7 @@ import {
 } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { validateEmail } from '@/utils/validation';
-import { Zap, ShieldCheck } from 'lucide-react-native';
+import { Zap, ShieldCheck, Eye, EyeOff } from 'lucide-react-native';
 import { Logo } from '@/components/Logo';
 import { isAdminEmail } from '@/constants/admin';
 
@@ -44,6 +45,7 @@ export default function LoginScreen() {
   const [passwordError, setPasswordError] = useState('');
   const [generalError, setGeneralError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     setEmailError('');
@@ -161,7 +163,7 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <View style={styles.formCard}>
+          <LinearGradient colors={GRADIENTS.primary} style={styles.formCard}>
             <View style={styles.formHeader}>
               <Logo size={48} variant="icon" />
               <View style={styles.formHeaderText}>
@@ -170,33 +172,55 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            <Input
-              label="Email"
-              type="email"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setEmailError('');
-                setGeneralError('');
-              }}
-              error={emailError}
-              placeholder="your@email.com"
-              autoComplete="email"
-            />
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setEmailError('');
+                    setGeneralError('');
+                  }}
+                  placeholder="your@email.com"
+                  placeholderTextColor="rgba(0,0,0,0.5)"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+              {emailError && <Text style={styles.inputErrorText}>{emailError}</Text>}
+            </View>
 
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setPasswordError('');
-                setGeneralError('');
-              }}
-              error={passwordError}
-              placeholder="Enter your password"
-              autoComplete="password"
-            />
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Password</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setPasswordError('');
+                    setGeneralError('');
+                  }}
+                  placeholder="Enter your password"
+                  placeholderTextColor="rgba(0,0,0,0.5)"
+                  autoComplete="password"
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}>
+                  {showPassword ? (
+                    <EyeOff size={20} color={COLORS.textSecondary} />
+                  ) : (
+                    <Eye size={20} color={COLORS.textSecondary} />
+                  )}
+                </TouchableOpacity>
+              </View>
+              {passwordError && <Text style={styles.inputErrorText}>{passwordError}</Text>}
+            </View>
 
             <TouchableOpacity
               onPress={() => router.push('/(auth)/reset-password')}
@@ -217,18 +241,13 @@ export default function LoginScreen() {
               style={styles.loginButton}
             />
 
-            <View style={styles.securityCallout}>
-              <ShieldCheck size={16} color={COLORS.primary} />
-              <Text style={styles.securityText}>Enterprise-grade authentication secured by Supabase</Text>
-            </View>
-
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don&apos;t have an account?</Text>
               <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
                 <Text style={styles.footerLink}>Create one in minutes</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </LinearGradient>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -316,12 +335,12 @@ const styles = StyleSheet.create({
   },
   formCard: {
     width: '100%',
-    backgroundColor: COLORS.surface,
+    backgroundColor: 'transparent',
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.xl,
     gap: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: 'rgba(255,255,255,0.2)',
     ...SHADOWS.md,
   },
   formHeader: {
@@ -336,11 +355,11 @@ const styles = StyleSheet.create({
   formTitle: {
     fontFamily: FONT_FAMILY.displayMedium,
     fontSize: FONT_SIZES.xxl,
-    color: COLORS.text,
+    color: COLORS.background,
   },
   formSubtitle: {
     ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+    color: 'rgba(255,255,255,0.85)',
   },
   forgotPassword: {
     alignSelf: 'flex-end',
@@ -349,7 +368,7 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     ...TYPOGRAPHY.bodyStrong,
     fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
+    color: COLORS.background,
   },
   errorContainer: {
     backgroundColor: `${COLORS.error}15`,
@@ -365,29 +384,71 @@ const styles = StyleSheet.create({
   loginButton: {
     marginBottom: SPACING.lg,
   },
+  inputContainer: {
+    marginBottom: SPACING.md,
+  },
+  inputLabel: {
+    ...TYPOGRAPHY.label,
+    color: COLORS.background,
+    marginBottom: SPACING.xs,
+    letterSpacing: 0.6,
+  },
+  inputWrapper: {
+    position: 'relative',
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.inputBackground,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    ...SHADOWS.sm,
+    overflow: 'hidden',
+  },
+  input: {
+    height: 54,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.lg,
+    paddingRight: 50,
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text,
+    fontFamily: FONT_FAMILY.body,
+    backgroundColor: 'transparent',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: SPACING.md,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  inputErrorText: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.background,
+    marginTop: SPACING.xs,
+  },
   securityCallout: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   securityText: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
+    color: 'rgba(255,255,255,0.75)',
   },
   footer: {
-    gap: SPACING.xs,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
     flexWrap: 'wrap',
   },
   footerText: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
+    color: 'rgba(255,255,255,0.75)',
   },
   footerLink: {
     ...TYPOGRAPHY.bodyStrong,
-    color: COLORS.primary,
+    color: COLORS.background,
   },
 });
