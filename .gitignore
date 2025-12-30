@@ -40,3 +40,8 @@ credentials.json
 *.keystore
 *.jks
 *.pem
+
+# build artifacts
+*.apk
+*.aab
+*.ipa
