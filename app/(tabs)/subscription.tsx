@@ -1,311 +1,90 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   ScrollView,
-  TouchableOpacity,
 } from 'react-native';
-import { router } from 'expo-router';
-import { Button } from '@/components/Button';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   BORDER_RADIUS,
   COLORS,
   FONT_FAMILY,
   FONT_SIZES,
+  GRADIENTS,
   SHADOWS,
   SPACING,
   TYPOGRAPHY,
 } from '@/constants/theme';
 import {
-  Check,
-  X,
-  Building2,
-  Crown,
-  ShieldCheck,
-  Zap,
+  Clock,
+  Sparkles,
 } from 'lucide-react-native';
-
-type PlanTier = 'free' | 'pro' | 'elite';
-
-interface PlanFeature {
-  name: string;
-  free: boolean | string;
-  pro: boolean | string;
-  elite: boolean | string;
-}
-
-const PLANS = {
-  free: {
-    name: 'Free',
-    price: '0',
-    period: 'forever',
-    description: 'Perfect for getting started',
-    icon: Building2,
-    color: COLORS.textSecondary,
-  },
-  pro: {
-    name: 'Pro',
-    price: '49',
-    period: 'month',
-    description: 'For growing startups',
-    icon: Zap,
-    color: COLORS.primary,
-    popular: true,
-  },
-  elite: {
-    name: 'Elite',
-    price: '149',
-    period: 'month',
-    description: 'For established ventures',
-    icon: Crown,
-    color: COLORS.accent,
-  },
-};
-
-const FEATURES: PlanFeature[] = [
-  { name: 'Network connections', free: 10, pro: 100, elite: 'Unlimited' },
-  { name: 'Funding opportunities', free: true, pro: true, elite: true },
-  { name: 'Direct messaging', free: 50, pro: 500, elite: 'Unlimited' },
-  { name: 'Expert sessions', free: false, pro: 2, elite: 'Unlimited' },
-  { name: 'Webinar access', free: false, pro: true, elite: true },
-  { name: 'Priority support', free: false, pro: true, elite: true },
-  { name: 'Advanced analytics', free: false, pro: true, elite: true },
-  { name: 'Custom integrations', free: false, pro: false, elite: true },
-  { name: 'Dedicated account manager', free: false, pro: false, elite: true },
-  { name: 'White-label options', free: false, pro: false, elite: true },
-];
+import { Logo } from '@/components/Logo';
 
 export default function SubscriptionScreen() {
-  const [selectedPlan, setSelectedPlan] = useState<PlanTier>('pro');
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-
-  const handleSelectPlan = (plan: PlanTier) => {
-    setSelectedPlan(plan);
-  };
-
-  const handleUpgrade = () => {
-    router.push({
-      pathname: '/(tabs)/payment',
-      params: { plan: selectedPlan, cycle: billingCycle },
-    });
-  };
-
-  const getAnnualPrice = (monthlyPrice: string) => {
-    if (monthlyPrice === '0') return '0';
-    const price = parseInt(monthlyPrice);
-    return Math.floor(price * 12 * 0.85).toString(); // 15% discount
-  };
-
-  const renderFeatureValue = (value: boolean | string | number) => {
-    if (value === true) {
-      return <Check size={18} color={COLORS.success} strokeWidth={2.5} />;
-    }
-    if (value === false) {
-      return <X size={18} color={COLORS.textSecondary} strokeWidth={2} />;
-    }
-    return (
-      <Text style={styles.featureValueText}>
-        {typeof value === 'number' ? value.toLocaleString() : value}
-      </Text>
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Choose Your Plan</Text>
-          <Text style={styles.headerSubtitle}>
-            Select the plan that best fits your startup journey
+        <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
+          <View style={styles.logoContainer}>
+            <Logo size={100} variant="icon" />
+          </View>
+          <View style={styles.iconContainer}>
+            <Clock size={48} color={COLORS.background} strokeWidth={2} />
+          </View>
+          <Text style={styles.title}>Coming Soon</Text>
+          <Text style={styles.subtitle}>
+            We're working on something amazing!
+          </Text>
+          <Text style={styles.description}>
+            Premium subscription plans with advanced features are currently under development. 
+            Stay tuned for exciting updates!
+          </Text>
+        </LinearGradient>
+
+        <View style={styles.featuresCard}>
+          <View style={styles.featuresHeader}>
+            <Sparkles size={24} color={COLORS.primary} strokeWidth={2} />
+            <Text style={styles.featuresTitle}>What's Coming</Text>
+          </View>
+          <View style={styles.featuresList}>
+            <View style={styles.featureItem}>
+              <View style={styles.featureDot} />
+              <Text style={styles.featureText}>Pro & Elite subscription plans</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.featureDot} />
+              <Text style={styles.featureText}>Advanced analytics & insights</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.featureDot} />
+              <Text style={styles.featureText}>Priority support & dedicated account manager</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.featureDot} />
+              <Text style={styles.featureText}>Unlimited connections & messaging</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.featureDot} />
+              <Text style={styles.featureText}>Exclusive webinars & expert sessions</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.featureDot} />
+              <Text style={styles.featureText}>Custom integrations & white-label options</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.infoCard}>
+          <Text style={styles.infoText}>
+            For now, enjoy all the free features available on NextIgnition. 
+            We'll notify you as soon as premium plans are ready!
           </Text>
         </View>
-
-        <View style={styles.billingToggle}>
-          <TouchableOpacity
-            style={[styles.toggleOption, billingCycle === 'monthly' && styles.toggleActive]}
-            onPress={() => setBillingCycle('monthly')}
-            activeOpacity={0.7}>
-            <Text
-              style={[
-                styles.toggleText,
-                billingCycle === 'monthly' && styles.toggleTextActive,
-              ]}>
-              Monthly
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.toggleOption, billingCycle === 'annual' && styles.toggleActive]}
-            onPress={() => setBillingCycle('annual')}
-            activeOpacity={0.7}>
-            <Text
-              style={[
-                styles.toggleText,
-                billingCycle === 'annual' && styles.toggleTextActive,
-              ]}>
-              Annual
-              <Text style={styles.savingsBadge}> Save 15%</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.plansGrid}>
-          {(['free', 'pro', 'elite'] as PlanTier[]).map((planKey) => {
-            const plan = PLANS[planKey];
-            const IconComponent = plan.icon;
-            const isSelected = selectedPlan === planKey;
-            const price =
-              billingCycle === 'annual' && planKey !== 'free'
-                ? getAnnualPrice(plan.price)
-                : plan.price;
-
-            return (
-              <TouchableOpacity
-                key={planKey}
-                style={[
-                  styles.planCard,
-                  isSelected && styles.planCardSelected,
-                  plan.popular && styles.planCardPopular,
-                ]}
-                onPress={() => handleSelectPlan(planKey)}
-                activeOpacity={0.85}>
-                {plan.popular && (
-                  <View style={styles.popularBadge}>
-                    <Text style={styles.popularBadgeText}>Most Popular</Text>
-                  </View>
-                )}
-                <View style={[styles.planIcon, { backgroundColor: `${plan.color}15` }]}>
-                  <IconComponent size={28} color={plan.color} strokeWidth={2} />
-                </View>
-                <Text style={styles.planName}>{plan.name}</Text>
-                <View style={styles.priceContainer}>
-                  <Text style={styles.currency}>$</Text>
-                  <Text style={styles.price}>{price}</Text>
-                  {planKey !== 'free' && (
-                    <Text style={styles.period}>
-                      /{billingCycle === 'annual' ? 'year' : plan.period}
-                    </Text>
-                  )}
-                </View>
-                <Text style={styles.planDescription}>{plan.description}</Text>
-                {isSelected && (
-                  <View style={styles.selectedIndicator}>
-                    <Check size={16} color={COLORS.background} strokeWidth={3} />
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={styles.comparisonCard}>
-          <Text style={styles.comparisonTitle}>Feature Comparison</Text>
-          <View style={styles.comparisonTable}>
-            <View style={styles.tableHeader}>
-              <View style={styles.tableHeaderCell}>
-                <Text style={styles.tableHeaderText}>Feature</Text>
-              </View>
-              <View style={styles.tableHeaderCell}>
-                <Text style={styles.tableHeaderText}>Free</Text>
-              </View>
-              <View style={styles.tableHeaderCell}>
-                <Text style={styles.tableHeaderText}>Pro</Text>
-              </View>
-              <View style={styles.tableHeaderCell}>
-                <Text style={styles.tableHeaderText}>Elite</Text>
-              </View>
-            </View>
-            {FEATURES.map((feature, index) => (
-              <View
-                key={feature.name}
-                style={[
-                  styles.tableRow,
-                  index === FEATURES.length - 1 && styles.tableRowLast,
-                ]}>
-                <View style={styles.tableCell}>
-                  <Text style={styles.tableCellText}>{feature.name}</Text>
-                </View>
-                <View style={styles.tableCell}>
-                  {renderFeatureValue(feature.free)}
-                </View>
-                <View style={styles.tableCell}>
-                  {renderFeatureValue(feature.pro)}
-                </View>
-                <View style={styles.tableCell}>
-                  {renderFeatureValue(feature.elite)}
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.currentPlanSection}>
-          <Text style={styles.currentPlanTitle}>Current Plan</Text>
-          <View style={styles.currentPlanCard}>
-            <View style={styles.currentPlanHeader}>
-              <View style={styles.currentPlanIcon}>
-                <Building2 size={24} color={COLORS.primary} strokeWidth={2} />
-              </View>
-              <View style={styles.currentPlanInfo}>
-                <Text style={styles.currentPlanName}>Free Plan</Text>
-                <Text style={styles.currentPlanRenewal}>Renews: Never</Text>
-              </View>
-            </View>
-            <View style={styles.currentPlanFeatures}>
-              <Text style={styles.currentPlanFeaturesTitle}>Current Benefits:</Text>
-              <View style={styles.featureList}>
-                <View style={styles.featureItem}>
-                  <Check size={16} color={COLORS.success} strokeWidth={2.5} />
-                  <Text style={styles.featureItemText}>10 Network connections</Text>
-                </View>
-                <View style={styles.featureItem}>
-                  <Check size={16} color={COLORS.success} strokeWidth={2.5} />
-                  <Text style={styles.featureItemText}>50 Direct messages</Text>
-                </View>
-                <View style={styles.featureItem}>
-                  <X size={16} color={COLORS.textSecondary} strokeWidth={2} />
-                  <Text style={[styles.featureItemText, styles.featureItemDisabled]}>
-                    Expert sessions
-                  </Text>
-                </View>
-                <View style={styles.featureItem}>
-                  <X size={16} color={COLORS.textSecondary} strokeWidth={2} />
-                  <Text style={[styles.featureItemText, styles.featureItemDisabled]}>
-                    Webinar recordings
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.paymentHistorySection}>
-          <Text style={styles.sectionTitle}>Payment History</Text>
-          <View style={styles.paymentHistoryCard}>
-            <Text style={styles.noPaymentsText}>No payment history</Text>
-            <Text style={styles.noPaymentsSubtext}>
-              Upgrade to Pro or Elite to see your payment history here
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.securitySection}>
-          <ShieldCheck size={20} color={COLORS.primary} strokeWidth={2} />
-          <Text style={styles.securityText}>
-            Secure payment processing via Razorpay and Stripe. Cancel anytime.
-          </Text>
-        </View>
-
-        {selectedPlan !== 'free' && (
-          <Button
-            title={`Upgrade to ${PLANS[selectedPlan].name}`}
-            onPress={handleUpgrade}
-            style={styles.upgradeButton}
-          />
-        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -321,305 +100,102 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xxl,
     gap: SPACING.xl,
   },
-  header: {
+  heroCard: {
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.xl * 1.5,
+    ...SHADOWS.md,
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: SPACING.lg,
   },
-  headerTitle: {
+  logoContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING.md,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
     ...TYPOGRAPHY.display,
     fontFamily: FONT_FAMILY.displayBold,
-    color: COLORS.text,
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  billingToggle: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.xs,
-  },
-  toggleOption: {
-    flex: 1,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: BORDER_RADIUS.sm,
-    alignItems: 'center',
-  },
-  toggleActive: {
-    backgroundColor: COLORS.primary,
-  },
-  toggleText: {
-    ...TYPOGRAPHY.body,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.textSecondary,
-  },
-  toggleTextActive: {
     color: COLORS.background,
-    fontFamily: FONT_FAMILY.bodyBold,
+    textAlign: 'center',
   },
-  savingsBadge: {
-    fontSize: FONT_SIZES.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
+  subtitle: {
+    ...TYPOGRAPHY.heading,
+    fontFamily: FONT_FAMILY.displayMedium,
+    color: 'rgba(255,255,255,0.95)',
+    textAlign: 'center',
   },
-  plansGrid: {
-    flexDirection: 'row',
-    gap: SPACING.md,
+  description: {
+    ...TYPOGRAPHY.body,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginTop: SPACING.sm,
   },
-  planCard: {
-    flex: 1,
+  featuresCard: {
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    position: 'relative',
-    ...SHADOWS.sm,
-    gap: SPACING.sm,
-  },
-  planCardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
-    ...SHADOWS.md,
-  },
-  planCardPopular: {
-    borderColor: COLORS.accent,
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: -12,
-    backgroundColor: COLORS.accent,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs / 2,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  popularBadgeText: {
-    ...TYPOGRAPHY.label,
-    color: COLORS.background,
-    fontFamily: FONT_FAMILY.bodyBold,
-  },
-  planIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: BORDER_RADIUS.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  planName: {
-    fontFamily: FONT_FAMILY.displayMedium,
-    fontSize: FONT_SIZES.xl,
-    color: COLORS.text,
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 2,
-  },
-  currency: {
-    fontFamily: FONT_FAMILY.displayMedium,
-    fontSize: FONT_SIZES.lg,
-    color: COLORS.text,
-  },
-  price: {
-    fontFamily: FONT_FAMILY.displayBold,
-    fontSize: 40,
-    color: COLORS.text,
-    lineHeight: 48,
-  },
-  period: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
-    marginLeft: 2,
-  },
-  planDescription: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  selectedIndicator: {
-    position: 'absolute',
-    top: SPACING.md,
-    right: SPACING.md,
-    width: 28,
-    height: 28,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  comparisonCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
+    padding: SPACING.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.md,
+    gap: SPACING.lg,
   },
-  comparisonTitle: {
-    ...TYPOGRAPHY.title,
-    fontFamily: FONT_FAMILY.displayMedium,
-    color: COLORS.text,
-    marginBottom: SPACING.lg,
-  },
-  comparisonTable: {
-    gap: 0,
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.border,
-    paddingBottom: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  tableHeaderCell: {
-    flex: 1,
-  },
-  tableHeaderText: {
-    ...TYPOGRAPHY.bodyStrong,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  tableRowLast: {
-    borderBottomWidth: 0,
-  },
-  tableCell: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tableCellText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.text,
-  },
-  featureValueText: {
-    ...TYPOGRAPHY.body,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.text,
-  },
-  securitySection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    padding: SPACING.md,
-    backgroundColor: COLORS.surfaceMuted,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  securityText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.textSecondary,
-    flex: 1,
-  },
-  upgradeButton: {
-    marginTop: SPACING.md,
-  },
-  currentPlanSection: {
-    gap: SPACING.md,
-  },
-  currentPlanTitle: {
-    ...TYPOGRAPHY.title,
-    fontFamily: FONT_FAMILY.displayMedium,
-    color: COLORS.text,
-  },
-  currentPlanCard: {
-    padding: SPACING.lg,
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.sm,
-    gap: SPACING.md,
-  },
-  currentPlanHeader: {
+  featuresHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    paddingBottom: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
-  currentPlanIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  currentPlanInfo: {
-    flex: 1,
-  },
-  currentPlanName: {
-    ...TYPOGRAPHY.title,
+  featuresTitle: {
+    ...TYPOGRAPHY.heading,
     fontFamily: FONT_FAMILY.displayMedium,
     color: COLORS.text,
-    marginBottom: SPACING.xs / 2,
   },
-  currentPlanRenewal: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
-  },
-  currentPlanFeatures: {
-    gap: SPACING.sm,
-  },
-  currentPlanFeaturesTitle: {
-    ...TYPOGRAPHY.bodyStrong,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text,
-  },
-  featureList: {
-    gap: SPACING.sm,
+  featuresList: {
+    gap: SPACING.md,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  featureItemText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.text,
-  },
-  featureItemDisabled: {
-    color: COLORS.textSecondary,
-    textDecorationLine: 'line-through',
-  },
-  paymentHistorySection: {
     gap: SPACING.md,
   },
-  paymentHistoryCard: {
-    padding: SPACING.xl,
-    backgroundColor: COLORS.surface,
+  featureDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.primary,
+  },
+  featureText: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.text,
+    flex: 1,
+  },
+  infoCard: {
+    backgroundColor: COLORS.surfaceMuted,
     borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.sm,
-    alignItems: 'center',
-    gap: SPACING.sm,
   },
-  noPaymentsText: {
-    ...TYPOGRAPHY.bodyStrong,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text,
-  },
-  noPaymentsSubtext: {
+  infoText: {
     ...TYPOGRAPHY.body,
     color: COLORS.textSecondary,
     textAlign: 'center',
+    lineHeight: 22,
   },
 });
+
 
 

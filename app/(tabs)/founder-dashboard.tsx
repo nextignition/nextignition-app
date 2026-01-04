@@ -405,14 +405,14 @@ export default function FounderDashboard() {
               <Text style={styles.featureTitle}>Mentorship</Text>
               <Text style={styles.featureSubtitle}>Find experts</Text>
             </TouchableOpacity>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.featureCard}
               onPress={() => router.push('/(tabs)/webinars')}
               activeOpacity={0.7}>
               <Video size={24} color={COLORS.primary} strokeWidth={2} />
               <Text style={styles.featureTitle}>Webinars</Text>
               <Text style={styles.featureSubtitle}>Events & sessions</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <TouchableOpacity
               style={styles.featureCard}
               onPress={() => router.push('/(tabs)/feed')}
@@ -421,14 +421,14 @@ export default function FounderDashboard() {
               <Text style={styles.featureTitle}>Activity Feed</Text>
               <Text style={styles.featureSubtitle}>Network updates</Text>
             </TouchableOpacity>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.featureCard}
               onPress={() => router.push('/(tabs)/notifications')}
               activeOpacity={0.7}>
               <Bell size={24} color={COLORS.primary} strokeWidth={2} />
               <Text style={styles.featureTitle}>Notifications</Text>
               <Text style={styles.featureSubtitle}>View updates</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </View>
 

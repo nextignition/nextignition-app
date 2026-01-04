@@ -97,9 +97,6 @@ export default function WebinarsScreen() {
         }>
         <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={styles.heroIcon}>
-              <Video size={28} color={COLORS.background} strokeWidth={2} />
-            </View>
             <View style={styles.heroText}>
               <Text style={styles.heroTitle}>Webinars & Events</Text>
               <Text style={styles.heroSubtitle}>

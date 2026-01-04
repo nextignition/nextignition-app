@@ -21,6 +21,8 @@
   - Pending tasks tracker
   - Funding portal integration
   - Upcoming sessions
+  - Main Features: Startup Profile, Funding Status, Mentorship, Activity Feed (2-column layout)
+  - Note: Webinars and Notifications removed from Main Features
   
 - ✅ **Investor Dashboard** (`app/(tabs)/investor-dashboard.tsx`)
   - Funding portal hero card
@@ -35,7 +37,8 @@
   - Accept/Decline functionality
   - Performance metrics
   - Upcoming sessions
-  - Quick actions (Host Webinar, Find Founders, Messages, Sessions)
+  - Quick actions (Availability, Messages)
+  - Main Features: Profile, Sessions, Analytics, Network Feed (2-column layout)
 
 ### 3. Admin Panel
 - ✅ Admin dashboard with analytics widgets

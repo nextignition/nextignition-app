@@ -104,9 +104,6 @@ export default function ExpertDashboard() {
         }>
         <LinearGradient colors={GRADIENTS.navy} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={styles.heroIcon}>
-              <Award size={28} color={COLORS.accent} strokeWidth={2} />
-            </View>
             <View style={styles.heroText}>
               <Text style={styles.heroTitle}>Welcome, {profile?.full_name || 'Expert'}</Text>
               <Text style={styles.heroSubtitle}>
@@ -238,14 +235,6 @@ export default function ExpertDashboard() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.featureCard}
-              onPress={() => router.push('/(tabs)/host-webinar')}
-              activeOpacity={0.7}>
-              <Video size={24} color={COLORS.primary} strokeWidth={2} />
-              <Text style={styles.featureTitle}>Host Webinar</Text>
-              <Text style={styles.featureSubtitle}>Create session</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.featureCard}
               onPress={() => router.push('/(tabs)/expert-analytics')}
               activeOpacity={0.7}>
               <BarChart3 size={24} color={COLORS.primary} strokeWidth={2} />
@@ -259,14 +248,6 @@ export default function ExpertDashboard() {
               <TrendingUp size={24} color={COLORS.primary} strokeWidth={2} />
               <Text style={styles.featureTitle}>Network Feed</Text>
               <Text style={styles.featureSubtitle}>Activity updates</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.featureCard}
-              onPress={() => router.push('/(tabs)/notifications')}
-              activeOpacity={0.7}>
-              <Bell size={24} color={COLORS.primary} strokeWidth={2} />
-              <Text style={styles.featureTitle}>Notifications</Text>
-              <Text style={styles.featureSubtitle}>View updates</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -651,7 +632,8 @@ const styles = StyleSheet.create({
   featuresGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.md,
+    justifyContent: 'space-between',
+    marginHorizontal: 0,
   },
   featureCard: {
     width: '48%',
@@ -663,6 +645,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.sm,
     alignItems: 'center',
     gap: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   featureTitle: {
     ...TYPOGRAPHY.bodyStrong,

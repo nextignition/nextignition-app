@@ -35,7 +35,9 @@
     },
     "android": {
       "package": "com.itsdeligh.hustlrhub",
-      "versionCode": 2,
+      "versionCode": 8,
+      "minSdkVersion": 21,
+      "targetSdkVersion": 34,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"

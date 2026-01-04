@@ -9,6 +9,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -31,11 +32,15 @@ import {
   MoreVertical,
   Plus,
   Trash2,
+  Search,
+  SlidersHorizontal,
+  X,
 } from 'lucide-react-native';
 import { useFeed, FeedPost, FeedPostType } from '@/hooks/useFeed';
 import { useAuth } from '@/contexts/AuthContext';
 import { CreatePostModal } from '@/components/feed/CreatePostModal';
 import { CommentsModal } from '@/components/feed/CommentsModal';
+import { Picker } from '@/components/Picker';
 
 const POST_TYPE_CONFIG: Record<
   FeedPostType,
@@ -48,6 +53,16 @@ const POST_TYPE_CONFIG: Record<
   milestone: { icon: Award, color: COLORS.accent, label: 'Milestone' },
   announcement: { icon: TrendingUp, color: COLORS.primary, label: 'Announcement' },
 };
+
+const POST_TYPES = [
+  { label: 'All Types', value: '' },
+  { label: 'Funding', value: 'funding' },
+  { label: 'Event', value: 'event' },
+  { label: 'Welcome', value: 'onboarding' },
+  { label: 'Achievement', value: 'achievement' },
+  { label: 'Milestone', value: 'milestone' },
+  { label: 'Announcement', value: 'announcement' },
+];
 
 export default function FeedScreen() {
   const { user } = useAuth();
@@ -68,6 +83,9 @@ export default function FeedScreen() {
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedPostAuthorId, setSelectedPostAuthorId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [postTypeFilter, setPostTypeFilter] = useState('');
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -150,9 +168,6 @@ export default function FeedScreen() {
         }>
         <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={styles.heroIcon}>
-              <TrendingUp size={28} color={COLORS.background} strokeWidth={2} />
-            </View>
             <View style={styles.heroText}>
               <Text style={styles.heroTitle}>Activity Feed</Text>
               <Text style={styles.heroSubtitle}>
@@ -168,6 +183,66 @@ export default function FeedScreen() {
             <Text style={styles.createButtonText}>Create Post</Text>
           </TouchableOpacity>
         </LinearGradient>
+
+        <View style={styles.searchSection}>
+          <View style={styles.searchBar}>
+            <Search size={20} color={COLORS.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search posts by content or author"
+              placeholderTextColor={COLORS.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <X size={18} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity
+            style={[styles.filterToggleButton, showFilters && styles.filterToggleButtonActive]}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <SlidersHorizontal size={20} color={showFilters ? COLORS.background : COLORS.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {showFilters && (
+          <View style={styles.filtersContainer}>
+            <View style={styles.filtersHeader}>
+              <Text style={styles.filtersTitle}>Filters</Text>
+              {(searchQuery || postTypeFilter) && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSearchQuery('');
+                    setPostTypeFilter('');
+                  }}
+                  style={styles.clearAllButton}
+                >
+                  <Text style={styles.clearAllText}>Clear All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.filtersContent}>
+              <View style={styles.filterRow}>
+                <Text style={styles.filterLabel}>Post Type</Text>
+                <Picker
+                  value={postTypeFilter}
+                  onValueChange={setPostTypeFilter}
+                  items={POST_TYPES}
+                  placeholder="Select post type"
+                />
+              </View>
+            </View>
+          </View>
+        )}
 
         {error && (
           <View style={styles.errorContainer}>
@@ -194,9 +269,24 @@ export default function FeedScreen() {
           </View>
         ) : (
           <View style={styles.postsList}>
-            {posts.map((post) => {
-              const isOwner = post.user_id === user?.id;
-              return (
+            {posts
+              .filter((post) => {
+                if (searchQuery) {
+                  const query = searchQuery.toLowerCase();
+                  const matchesSearch =
+                    post.content?.toLowerCase().includes(query) ||
+                    post.user_name?.toLowerCase().includes(query) ||
+                    post.company_name?.toLowerCase().includes(query);
+                  if (!matchesSearch) return false;
+                }
+                if (postTypeFilter && post.type !== postTypeFilter) {
+                  return false;
+                }
+                return true;
+              })
+              .map((post) => {
+                const isOwner = post.user_id === user?.id;
+                return (
                 <View key={post.id} style={styles.postCard}>
                   <View style={styles.postHeader}>
                     <View style={styles.postUserInfo}>
@@ -491,5 +581,95 @@ const styles = StyleSheet.create({
   },
   postActionTextActive: {
     color: COLORS.error,
+  },
+  searchSection: {
+    flexDirection: 'row',
+    padding: SPACING.lg,
+    gap: SPACING.md,
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    paddingBottom: SPACING.sm,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.xs,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: SPACING.sm,
+    paddingVertical: SPACING.md,
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text,
+  },
+  clearButton: {
+    padding: SPACING.xs,
+    marginLeft: SPACING.xs,
+  },
+  filterToggleButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.xs,
+  },
+  filterToggleButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filtersContainer: {
+    backgroundColor: COLORS.surfaceMuted,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: COLORS.border,
+    paddingBottom: SPACING.lg,
+    paddingTop: SPACING.sm,
+  },
+  filtersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  filtersTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontFamily: FONT_FAMILY.displayMedium,
+    color: COLORS.text,
+  },
+  clearAllButton: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+  },
+  clearAllText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.primary,
+  },
+  filtersContent: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.md,
+  },
+  filterRow: {
+    gap: SPACING.xs,
+  },
+  filterLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
   },
 });

@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -36,9 +37,12 @@ import {
   TrendingUp,
   Video,
   X,
+  Search,
+  SlidersHorizontal,
 } from 'lucide-react-native';
 import { useMentorshipRequests } from '@/hooks/useMentorshipRequests';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { Picker } from '@/components/Picker';
 
 export default function ExpertSessionsScreen() {
   const params = useLocalSearchParams<{ tab?: string }>();
@@ -46,6 +50,9 @@ export default function ExpertSessionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('');
 
   const {
     requests,
@@ -230,9 +237,6 @@ export default function ExpertSessionsScreen() {
         }>
         <LinearGradient colors={['#6666FF', '#4B4FDB']} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={styles.heroIcon}>
-              <Calendar size={28} color={COLORS.accent} strokeWidth={2} />
-            </View>
             <View style={styles.heroText}>
               <Text style={styles.heroTitle}>Session Management</Text>
               <Text style={styles.heroSubtitle}>
@@ -241,6 +245,71 @@ export default function ExpertSessionsScreen() {
             </View>
           </View>
         </LinearGradient>
+
+        <View style={styles.searchSection}>
+          <View style={styles.searchBar}>
+            <Search size={20} color={COLORS.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by founder name or topic"
+              placeholderTextColor={COLORS.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <X size={18} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity
+            style={[styles.filterToggleButton, showFilters && styles.filterToggleButtonActive]}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <SlidersHorizontal size={20} color={showFilters ? COLORS.background : COLORS.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {showFilters && (
+          <View style={styles.filtersContainer}>
+            <View style={styles.filtersHeader}>
+              <Text style={styles.filtersTitle}>Filters</Text>
+              {(searchQuery || statusFilter) && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSearchQuery('');
+                    setStatusFilter('');
+                  }}
+                  style={styles.clearAllButton}
+                >
+                  <Text style={styles.clearAllText}>Clear All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.filtersContent}>
+              <View style={styles.filterRow}>
+                <Text style={styles.filterLabel}>Status</Text>
+                <Picker
+                  value={statusFilter}
+                  onValueChange={setStatusFilter}
+                  items={[
+                    { label: 'All Status', value: '' },
+                    { label: 'Pending', value: 'pending' },
+                    { label: 'Accepted', value: 'accepted' },
+                    { label: 'Completed', value: 'completed' },
+                  ]}
+                  placeholder="Select status"
+                />
+              </View>
+            </View>
+          </View>
+        )}
 
         <View style={styles.tabs}>
           <TouchableOpacity
@@ -315,7 +384,23 @@ export default function ExpertSessionsScreen() {
               </View>
             ) : pendingRequests.length > 0 ? (
               <View style={styles.requestsList}>
-                {pendingRequests.map((request) => (
+                {pendingRequests
+                  .filter((request) => {
+                    if (searchQuery) {
+                      const query = searchQuery.toLowerCase();
+                      const matchesSearch =
+                        request.founder?.full_name?.toLowerCase().includes(query) ||
+                        request.founder?.email?.toLowerCase().includes(query) ||
+                        request.topic?.toLowerCase().includes(query) ||
+                        request.message?.toLowerCase().includes(query);
+                      if (!matchesSearch) return false;
+                    }
+                    if (statusFilter && request.status !== statusFilter) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((request) => (
                   <View key={request.id} style={styles.requestCard}>
                     <View style={styles.requestHeader}>
                       <View style={styles.requestIcon}>
@@ -394,7 +479,22 @@ export default function ExpertSessionsScreen() {
               </View>
             ) : upcomingSessions.length > 0 ? (
               <View style={styles.sessionsList}>
-                {upcomingSessions.map((session) => (
+                {upcomingSessions
+                  .filter((session) => {
+                    if (searchQuery) {
+                      const query = searchQuery.toLowerCase();
+                      const matchesSearch =
+                        session.founder?.full_name?.toLowerCase().includes(query) ||
+                        session.founder?.email?.toLowerCase().includes(query) ||
+                        session.topic?.toLowerCase().includes(query);
+                      if (!matchesSearch) return false;
+                    }
+                    if (statusFilter && session.status !== statusFilter) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((session) => (
                   <View key={session.id} style={styles.sessionCard}>
                     <View style={styles.sessionHeader}>
                       <View style={styles.sessionIcon}>
@@ -461,7 +561,22 @@ export default function ExpertSessionsScreen() {
               </View>
             ) : pastSessions.length > 0 ? (
               <View style={styles.sessionsList}>
-                {pastSessions.map((session) => (
+                {pastSessions
+                  .filter((session) => {
+                    if (searchQuery) {
+                      const query = searchQuery.toLowerCase();
+                      const matchesSearch =
+                        session.founder?.full_name?.toLowerCase().includes(query) ||
+                        session.founder?.email?.toLowerCase().includes(query) ||
+                        session.topic?.toLowerCase().includes(query);
+                      if (!matchesSearch) return false;
+                    }
+                    if (statusFilter && session.status !== statusFilter) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((session) => (
                   <View key={session.id} style={styles.sessionCard}>
                     <View style={styles.sessionHeader}>
                       <View style={styles.sessionIcon}>
@@ -921,6 +1036,96 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodyStrong,
     color: COLORS.background,
     fontFamily: FONT_FAMILY.bodyBold,
+  },
+  searchSection: {
+    flexDirection: 'row',
+    padding: SPACING.lg,
+    gap: SPACING.md,
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    paddingBottom: SPACING.sm,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.xs,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: SPACING.sm,
+    paddingVertical: SPACING.md,
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text,
+  },
+  clearButton: {
+    padding: SPACING.xs,
+    marginLeft: SPACING.xs,
+  },
+  filterToggleButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.xs,
+  },
+  filterToggleButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filtersContainer: {
+    backgroundColor: COLORS.surfaceMuted,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: COLORS.border,
+    paddingBottom: SPACING.lg,
+    paddingTop: SPACING.sm,
+  },
+  filtersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  filtersTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontFamily: FONT_FAMILY.displayMedium,
+    color: COLORS.text,
+  },
+  clearAllButton: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+  },
+  clearAllText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.primary,
+  },
+  filtersContent: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.md,
+  },
+  filterRow: {
+    gap: SPACING.xs,
+  },
+  filterLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
   },
 });
 

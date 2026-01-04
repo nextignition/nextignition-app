@@ -12,7 +12,7 @@ function ChatTabIcon({ size, color }: { size: number; color: string }) {
 
   return (
     <View style={{ position: 'relative' }}>
-      <MessageSquare size={24} color={color} strokeWidth={2.5} />
+      <MessageSquare size={22} color={color} strokeWidth={2.5} />
       {totalUnread > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>
@@ -55,9 +55,9 @@ export default function TabLayout() {
           backgroundColor: COLORS.background,
           borderTopColor: COLORS.border,
           borderTopWidth: 1,
-          paddingTop: Platform.OS === 'ios' ? 8 : 4,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-          height: Platform.OS === 'ios' ? 85 : 65,
+          paddingTop: Platform.OS === 'ios' ? 4 : 2,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+          height: Platform.OS === 'ios' ? 90 : 72,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
@@ -71,15 +71,19 @@ export default function TabLayout() {
           marginTop: 2,
           marginBottom: 0,
           paddingBottom: 0,
-          lineHeight: 14,
+          lineHeight: 16,
           textTransform: 'none',
+          includeFontPadding: false,
+          textAlignVertical: 'center',
         },
         tabBarIconStyle: {
-          marginTop: 4,
+          marginTop: 0,
           marginBottom: 0,
         },
         tabBarItemStyle: {
-          paddingVertical: 4,
+          paddingVertical: 0,
+          paddingTop: 4,
+          paddingBottom: 2,
         },
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
@@ -94,7 +98,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconContainer}>
               <Home 
-                size={24} 
+                size={22} 
                 color={focused ? COLORS.primary : color || COLORS.textSecondary} 
                 strokeWidth={2.5} 
               />
@@ -128,7 +132,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconContainer}>
               <UsersRound 
-                size={24} 
+                size={22} 
                 color={focused ? COLORS.primary : color || COLORS.textSecondary} 
                 strokeWidth={2.5} 
               />
@@ -144,7 +148,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconContainer}>
               <ChatTabIcon 
-                size={24} 
+                size={22} 
                 color={focused ? COLORS.primary : color || COLORS.textSecondary} 
               />
             </View>
@@ -161,7 +165,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconContainer}>
               <BarChart3 
-                size={24} 
+                size={22} 
                 color={focused ? COLORS.primary : color || COLORS.textSecondary} 
                 strokeWidth={2.5} 
               />
@@ -179,7 +183,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconContainer}>
               <Users 
-                size={24} 
+                size={22} 
                 color={focused ? COLORS.primary : color || COLORS.textSecondary} 
                 strokeWidth={2.5} 
               />
@@ -190,19 +194,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="opportunities"
         options={{
-          title: 'Opportunities',
-          tabBarLabel: 'Opportunities',
-          // Show only for investors
-          href: userRole === 'investor' ? '/opportunities' : null,
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.iconContainer}>
-              <BriefcaseBusiness 
-                size={24} 
-                color={focused ? COLORS.primary : color || COLORS.textSecondary} 
-                strokeWidth={2.5} 
-              />
-            </View>
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -213,7 +205,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconContainer}>
               <UserRound 
-                size={24} 
+                size={22} 
                 color={focused ? COLORS.primary : color || COLORS.textSecondary} 
                 strokeWidth={2.5} 
               />
@@ -403,8 +395,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
   },
   badge: {
     position: 'absolute',

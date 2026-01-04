@@ -11,15 +11,52 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { EmptyState } from '@/components/EmptyState';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { FounderProfileCard } from '@/components/network/FounderProfileCard';
 import { InvestorProfileCard } from '@/components/network/InvestorProfileCard';
+import { Picker } from '@/components/Picker';
 import { useExploreNetwork } from '@/hooks/useExploreNetwork';
 import { getOrCreateDirectConversation } from '@/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_FAMILY, theme } from '@/constants/theme';
-import { Search, Filter, Network } from 'lucide-react-native';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_FAMILY, GRADIENTS, SHADOWS, theme } from '@/constants/theme';
+import { Search, Filter, Network, X, SlidersHorizontal } from 'lucide-react-native';
+
+const INDUSTRIES = [
+  { label: 'All Industries', value: '' },
+  { label: 'Technology', value: 'technology' },
+  { label: 'Healthcare', value: 'healthcare' },
+  { label: 'Finance', value: 'finance' },
+  { label: 'Education', value: 'education' },
+  { label: 'E-commerce', value: 'ecommerce' },
+  { label: 'SaaS', value: 'saas' },
+  { label: 'AI/ML', value: 'ai_ml' },
+  { label: 'Blockchain', value: 'blockchain' },
+  { label: 'Consumer', value: 'consumer' },
+  { label: 'B2B', value: 'b2b' },
+  { label: 'Other', value: 'other' },
+];
+
+const STAGES = [
+  { label: 'All Stages', value: '' },
+  { label: 'Idea', value: 'idea' },
+  { label: 'MVP', value: 'mvp' },
+  { label: 'Growth', value: 'growth' },
+  { label: 'Scale', value: 'scale' },
+  { label: 'Pre-seed', value: 'pre_seed' },
+  { label: 'Seed', value: 'seed' },
+  { label: 'Series A', value: 'series_a' },
+  { label: 'Series B', value: 'series_b' },
+  { label: 'Series C+', value: 'series_c_plus' },
+];
+
+const ROLES = [
+  { label: 'All Roles', value: '' },
+  { label: 'Founder', value: 'founder' },
+  { label: 'Investor', value: 'investor' },
+  { label: 'Expert', value: 'expert' },
+];
 
 export default function NetworkScreen() {
   const router = useRouter();
@@ -28,6 +65,7 @@ export default function NetworkScreen() {
   const [industryFilter, setIndustryFilter] = useState('');
   const [stageFilter, setStageFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [chatLoading, setChatLoading] = useState<Record<string, boolean>>({});
 
@@ -42,7 +80,32 @@ export default function NetworkScreen() {
     industry: industryFilter,
     stage: stageFilter,
     location: locationFilter,
+    role: roleFilter as 'founder' | 'investor' | 'expert' | undefined,
   });
+
+  // Filter profiles by role if role filter is set
+  const filteredProfiles = roleFilter
+    ? profiles.filter(p => {
+        if (roleFilter === 'founder') return p.role === 'founder' || p.role === 'cofounder';
+        return p.role === roleFilter;
+      })
+    : profiles;
+
+  const hasActiveFilters = !!(
+    searchQuery ||
+    industryFilter ||
+    stageFilter ||
+    locationFilter ||
+    roleFilter
+  );
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setIndustryFilter('');
+    setStageFilter('');
+    setLocationFilter('');
+    setRoleFilter('');
+  };
 
   const handleChat = async (targetId: string, targetName: string) => {
     console.log('handleChat called with:', { targetId, targetName, userId: user?.id });
@@ -136,57 +199,155 @@ export default function NetworkScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <LinearGradient colors={GRADIENTS.primary} style={styles.header}>
         <Text style={styles.headerTitle}>Explore Network</Text>
         <Text style={styles.headerSubtitle}>
-          {showFounders && 'Discover innovative startups and founders'}
-          {showInvestors && !showFounders && 'Connect with investors'}
-          {profile?.role === 'expert' && 'Connect with founders and investors'}
+          {showFounders && !profile?.role && 'Discover innovative startups and founders'}
+          {showInvestors && !showFounders && !profile?.role && 'Connect with investors'}
+          {profile?.role === 'expert' && 'Discover innovative startups and founders • Connect with founders and investors'}
         </Text>
-      </View>
+      </LinearGradient>
 
-      <View style={styles.searchContainer}>
+      <View style={styles.searchSection}>
         <View style={styles.searchBar}>
-          <Search size={20} color={theme.colors.textSecondary} />
+          <Search size={20} color={COLORS.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search by name, company, or industry"
-            placeholderTextColor={theme.colors.textSecondary}
+            placeholderTextColor={COLORS.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              style={styles.clearButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <X size={18} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
         <TouchableOpacity
-          style={styles.filterButton}
+          style={[styles.filterToggleButton, showFilters && styles.filterToggleButtonActive]}
           onPress={() => setShowFilters(!showFilters)}
         >
-          <Filter size={20} color={theme.colors.primary} />
+          <SlidersHorizontal size={20} color={showFilters ? COLORS.background : COLORS.primary} />
         </TouchableOpacity>
       </View>
 
+      {/* Advanced Filters Panel */}
       {showFilters && (
         <View style={styles.filtersContainer}>
-          <TextInput
-            style={styles.filterInput}
-            placeholder="Industry"
-            placeholderTextColor={theme.colors.textSecondary}
-            value={industryFilter}
-            onChangeText={setIndustryFilter}
-          />
-          <TextInput
-            style={styles.filterInput}
-            placeholder="Stage"
-            placeholderTextColor={theme.colors.textSecondary}
-            value={stageFilter}
-            onChangeText={setStageFilter}
-          />
-          <TextInput
-            style={styles.filterInput}
-            placeholder="Location"
-            placeholderTextColor={theme.colors.textSecondary}
-            value={locationFilter}
-            onChangeText={setLocationFilter}
-          />
+          <View style={styles.filtersHeader}>
+            <Text style={styles.filtersTitle}>Filters</Text>
+            {hasActiveFilters && (
+              <TouchableOpacity onPress={clearAllFilters} style={styles.clearAllButton}>
+                <Text style={styles.clearAllText}>Clear All</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          <View style={styles.filtersContent}>
+            {profile?.role === 'expert' && (
+              <View style={styles.filterRow}>
+                <Text style={styles.filterLabel}>Role</Text>
+                <Picker
+                  value={roleFilter}
+                  onValueChange={setRoleFilter}
+                  items={ROLES}
+                  placeholder="Select role"
+                />
+              </View>
+            )}
+
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Industry</Text>
+              <Picker
+                value={industryFilter}
+                onValueChange={setIndustryFilter}
+                items={INDUSTRIES}
+                placeholder="Select industry"
+              />
+            </View>
+
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Stage</Text>
+              <Picker
+                value={stageFilter}
+                onValueChange={setStageFilter}
+                items={STAGES}
+                placeholder="Select stage"
+              />
+            </View>
+
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Location</Text>
+              <TextInput
+                style={styles.filterInput}
+                placeholder="Enter location"
+                placeholderTextColor={COLORS.textSecondary}
+                value={locationFilter}
+                onChangeText={setLocationFilter}
+              />
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Active Filters Display */}
+      {hasActiveFilters && (
+        <View style={styles.activeFiltersContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeFiltersContent}>
+            {searchQuery && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>Search: {searchQuery}</Text>
+                <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.removeFilterButton}>
+                  <X size={14} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            )}
+            {industryFilter && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>
+                  Industry: {INDUSTRIES.find(i => i.value === industryFilter)?.label || industryFilter}
+                </Text>
+                <TouchableOpacity onPress={() => setIndustryFilter('')} style={styles.removeFilterButton}>
+                  <X size={14} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            )}
+            {stageFilter && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>
+                  Stage: {STAGES.find(s => s.value === stageFilter)?.label || stageFilter}
+                </Text>
+                <TouchableOpacity onPress={() => setStageFilter('')} style={styles.removeFilterButton}>
+                  <X size={14} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            )}
+            {locationFilter && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>Location: {locationFilter}</Text>
+                <TouchableOpacity onPress={() => setLocationFilter('')} style={styles.removeFilterButton}>
+                  <X size={14} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            )}
+            {roleFilter && (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>
+                  Role: {ROLES.find(r => r.value === roleFilter)?.label || roleFilter}
+                </Text>
+                <TouchableOpacity onPress={() => setRoleFilter('')} style={styles.removeFilterButton}>
+                  <X size={14} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
         </View>
       )}
 
@@ -195,27 +356,22 @@ export default function NetworkScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {profiles.length === 0 ? (
+        {filteredProfiles.length === 0 ? (
           <EmptyState
             icon={Network}
             title="No profiles found"
             message="Try adjusting your search or filters"
             actionLabel="Clear Filters"
-            onAction={() => {
-              setSearchQuery('');
-              setIndustryFilter('');
-              setStageFilter('');
-              setLocationFilter('');
-            }}
+            onAction={clearAllFilters}
           />
         ) : (
           <>
-            {showFounders && (
+            {showFounders && (!roleFilter || roleFilter === 'founder') && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  Founders ({profiles.filter(p => p.role === 'founder' || p.role === 'cofounder').length})
+                  Founders ({filteredProfiles.filter(p => p.role === 'founder' || p.role === 'cofounder').length})
                 </Text>
-                {profiles
+                {filteredProfiles
                   .filter(p => p.role === 'founder' || p.role === 'cofounder')
                   .map(founderProfile => {
                     const startup = startups?.find(s => s.owner_id === founderProfile.id);
@@ -235,12 +391,12 @@ export default function NetworkScreen() {
               </View>
             )}
 
-            {showInvestors && (
+            {showInvestors && (!roleFilter || roleFilter === 'investor') && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  Investors ({profiles.filter(p => p.role === 'investor').length})
+                  Investors ({filteredProfiles.filter(p => p.role === 'investor').length})
                 </Text>
-                {profiles
+                {filteredProfiles
                   .filter(p => p.role === 'investor')
                   .map(investorProfile => (
                     <InvestorProfileCard
@@ -249,6 +405,25 @@ export default function NetworkScreen() {
                       onChat={() => handleChat(investorProfile.id, investorProfile.full_name || 'User')}
                       onViewDetails={() => handleViewDetails(investorProfile.id)}
                       chatLoading={chatLoading[investorProfile.id] || false}
+                    />
+                  ))}
+              </View>
+            )}
+
+            {profile?.role === 'expert' && (!roleFilter || roleFilter === 'expert') && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
+                  Experts ({filteredProfiles.filter(p => p.role === 'expert').length})
+                </Text>
+                {filteredProfiles
+                  .filter(p => p.role === 'expert')
+                  .map(expertProfile => (
+                    <InvestorProfileCard
+                      key={expertProfile.id}
+                      profile={expertProfile}
+                      onChat={() => handleChat(expertProfile.id, expertProfile.full_name || 'User')}
+                      onViewDetails={() => handleViewDetails(expertProfile.id)}
+                      chatLoading={chatLoading[expertProfile.id] || false}
                     />
                   ))}
               </View>
@@ -264,85 +439,204 @@ export default function NetworkScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: COLORS.background,
   },
   header: {
-    padding: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    padding: SPACING.lg,
+    paddingTop: SPACING.xl,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    fontSize: FONT_SIZES.xxxl,
+    fontFamily: FONT_FAMILY.displayBold,
+    color: COLORS.background,
+    marginBottom: SPACING.xs,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONT_FAMILY.body,
+    color: 'rgba(255,255,255,0.9)',
   },
-  searchContainer: {
+  searchSection: {
     flexDirection: 'row',
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
+    padding: SPACING.lg,
+    gap: SPACING.md,
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    paddingBottom: SPACING.sm,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    paddingHorizontal: theme.spacing.md,
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: COLORS.border,
+    ...SHADOWS.xs,
   },
   searchInput: {
     flex: 1,
-    marginLeft: theme.spacing.sm,
-    paddingVertical: theme.spacing.md,
-    fontSize: 14,
-    color: theme.colors.text,
+    marginLeft: SPACING.sm,
+    paddingVertical: SPACING.md,
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text,
   },
-  filterButton: {
+  clearButton: {
+    padding: SPACING.xs,
+    marginLeft: SPACING.xs,
+  },
+  filterToggleButton: {
     width: 48,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: BORDER_RADIUS.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: COLORS.border,
+    ...SHADOWS.xs,
+  },
+  filterToggleButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  chipsContainer: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xs,
+    paddingBottom: SPACING.xs,
+    gap: SPACING.xs,
+    minHeight: 0,
+  },
+  chip: {
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginRight: SPACING.xs,
+    minHeight: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  chipText: {
+    fontSize: FONT_SIZES.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.textSecondary,
+    lineHeight: 14,
+  },
+  chipTextActive: {
+    color: COLORS.background,
+    fontFamily: FONT_FAMILY.bodyBold,
   },
   filtersContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
-    gap: theme.spacing.sm,
+    backgroundColor: COLORS.surfaceMuted,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: COLORS.border,
+    paddingBottom: SPACING.lg,
+    paddingTop: SPACING.sm,
+  },
+  filtersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
+  },
+  filtersTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontFamily: FONT_FAMILY.displayMedium,
+    color: COLORS.text,
+  },
+  clearAllButton: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+  },
+  clearAllText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.primary,
+  },
+  filtersContent: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.md,
+  },
+  filterRow: {
+    gap: SPACING.xs,
+  },
+  filterLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
   },
   filterInput: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    fontSize: 14,
-    color: theme.colors.text,
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: COLORS.border,
+    minHeight: 56,
+  },
+  activeFiltersContainer: {
+    backgroundColor: COLORS.surfaceMuted,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    paddingVertical: SPACING.sm,
+  },
+  activeFiltersContent: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.full,
+    marginRight: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.primary + '40',
+  },
+  activeFilterText: {
+    fontSize: FONT_SIZES.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.primaryDark,
+    marginRight: SPACING.xs,
+  },
+  removeFilterButton: {
+    padding: SPACING.xs / 2,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
+    padding: SPACING.lg,
+    paddingBottom: SPACING.xl,
   },
   section: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: SPACING.xl,
   },
   sectionTitle: {
     fontSize: FONT_SIZES.xl,
     fontFamily: FONT_FAMILY.displayMedium,
     color: COLORS.text,
-    marginBottom: theme.spacing.md,
+    marginBottom: SPACING.md,
     letterSpacing: -0.3,
   },
 });

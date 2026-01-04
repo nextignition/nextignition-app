@@ -125,15 +125,15 @@ export default function RegisterScreen() {
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    setEmailError('');
-                    setGeneralError('');
-                  }}
-                  placeholder="your@email.com"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                setEmailError('');
+                setGeneralError('');
+              }}
+              placeholder="your@email.com"
                   placeholderTextColor="rgba(0,0,0,0.5)"
-                  autoComplete="email"
+              autoComplete="email"
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -146,15 +146,15 @@ export default function RegisterScreen() {
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    setPasswordError('');
-                    setGeneralError('');
-                  }}
-                  placeholder="Create a strong password"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setPasswordError('');
+                setGeneralError('');
+              }}
+              placeholder="Create a strong password"
                   placeholderTextColor="rgba(0,0,0,0.5)"
-                  autoComplete="password-new"
+              autoComplete="password-new"
                   secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity
@@ -175,15 +175,15 @@ export default function RegisterScreen() {
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
-                  value={confirmPassword}
-                  onChangeText={(text) => {
-                    setConfirmPassword(text);
-                    setConfirmPasswordError('');
-                    setGeneralError('');
-                  }}
-                  placeholder="Confirm your password"
+              value={confirmPassword}
+              onChangeText={(text) => {
+                setConfirmPassword(text);
+                setConfirmPasswordError('');
+                setGeneralError('');
+              }}
+              placeholder="Confirm your password"
                   placeholderTextColor="rgba(0,0,0,0.5)"
-                  autoComplete="password-new"
+              autoComplete="password-new"
                   secureTextEntry={!showConfirmPassword}
                 />
                 <TouchableOpacity

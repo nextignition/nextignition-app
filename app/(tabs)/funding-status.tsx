@@ -166,9 +166,6 @@ export default function FundingStatusScreen() {
         showsVerticalScrollIndicator={false}>
         <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={styles.heroIcon}>
-              <TrendingUp size={28} color={COLORS.background} strokeWidth={2} />
-            </View>
             <View style={styles.heroText}>
               <Text style={styles.heroTitle}>Funding Status</Text>
               <Text style={styles.heroSubtitle}>Track your funding journey</Text>

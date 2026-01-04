@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Send, Paperclip, Smile } from 'lucide-react-native';
+import { Send } from 'lucide-react-native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONT_FAMILY } from '@/constants/theme';
 
 interface ChatInputProps {
@@ -54,10 +54,6 @@ export function ChatInput({ onSend, placeholder = 'Type a message...', onTypingS
   return (
     <View style={styles.container}>
       <View style={[styles.inputContainer, isFocused && styles.inputContainerFocused]}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Paperclip size={20} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-
         <TextInput
           style={styles.input}
           value={message}
@@ -69,10 +65,6 @@ export function ChatInput({ onSend, placeholder = 'Type a message...', onTypingS
           multiline
           maxLength={1000}
         />
-
-        <TouchableOpacity style={styles.iconButton}>
-          <Smile size={20} color={COLORS.textSecondary} />
-        </TouchableOpacity>
 
         {message.trim() ? (
           <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
@@ -128,12 +120,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlignVertical: 'center',
     fontFamily: FONT_FAMILY.body,
-  },
-  iconButton: {
-    padding: SPACING.sm,
-    marginBottom: SPACING.xs,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'transparent',
   },
   sendButton: {
     width: 44,

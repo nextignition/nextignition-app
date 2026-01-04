@@ -95,7 +95,16 @@ export function useExploreNetwork(initialFilters?: NetworkFilters) {
         targetRoles = ['founder', 'cofounder'];
       } else if (profile.role === 'expert') {
         // Experts see both founders and investors
-        targetRoles = ['founder', 'cofounder', 'investor'];
+        // If role filter is set, use it; otherwise show all
+        if (filters.role) {
+          if (filters.role === 'founder') {
+            targetRoles = ['founder', 'cofounder'];
+          } else {
+            targetRoles = [filters.role];
+          }
+        } else {
+          targetRoles = ['founder', 'cofounder', 'investor', 'expert'];
+        }
       }
 
       if (targetRoles.length === 0) {
