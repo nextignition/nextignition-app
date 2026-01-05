@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import {
@@ -24,17 +26,74 @@ import {
   TYPOGRAPHY,
 } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
-import { validateEmail } from '@/utils/validation';
-import { ArrowLeft, Mail, Sparkles } from 'lucide-react-native';
+import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
+import { ArrowLeft, Mail, Sparkles, Eye, EyeOff } from 'lucide-react-native';
+import Constants from 'expo-constants';
 
 export default function ResetPasswordScreen() {
+  const params = useLocalSearchParams();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [generalError, setGeneralError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isResetting, setIsResetting] = useState(false); // true when user is setting new password
 
-  const handleResetPassword = async () => {
+  // Check if we're in password update mode (has token from email link)
+  useEffect(() => {
+    // Check if we have URL parameters indicating a password reset flow
+    // Supabase redirects with hash fragments that get parsed by the SDK
+    const checkForResetSession = async () => {
+      try {
+        // Check URL params first (type=recovery indicates password reset)
+        const urlType = params.type as string;
+        const hasAccessToken = !!params.access_token;
+        const hasTokenHash = !!params.token_hash;
+        
+        console.log('[Reset Password] Checking for reset session:', {
+          urlType,
+          hasAccessToken,
+          hasTokenHash,
+          params: Object.keys(params),
+        });
+        
+        if (urlType === 'recovery' || hasAccessToken || hasTokenHash) {
+          // User came from reset link - show password update form
+          console.log('[Reset Password] Detected reset link, showing password form');
+          setIsResetting(true);
+          return;
+        }
+        
+        // Also check if there's a session (user clicked reset link)
+        // This handles the case where Supabase has already processed the token
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        console.log('[Reset Password] Session check:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+        });
+        
+        // If we have a session and we're on this page, it might be from a password reset
+        // Show the password update form to allow user to set new password
+        if (session) {
+          console.log('[Reset Password] Session found, showing password form');
+          setIsResetting(true);
+        }
+      } catch (error) {
+        console.error('[Reset Password] Error checking reset session:', error);
+      }
+    };
+    
+    checkForResetSession();
+  }, [params]);
+
+  const handleRequestReset = async () => {
     setEmailError('');
     setGeneralError('');
 
@@ -47,10 +106,32 @@ export default function ResetPasswordScreen() {
     setLoading(true);
 
     try {
+      // For Expo Go, use exp:// scheme with localhost:8081
+      // For standalone apps, use the custom scheme (myapp://)
+      let redirectUrl = Constants.expoConfig?.extra?.AUTH_REDIRECT_URL;
+      
+      if (!redirectUrl) {
+        // Check if running in Expo Go
+        const isExpoGo = Constants.executionEnvironment === 'storeClient' || 
+                         Constants.appOwnership === 'expo';
+        
+        if (isExpoGo) {
+          // Expo Go format: exp://localhost:8081/--/reset-password
+          // Note: On physical device, replace localhost with your computer's IP address
+          // IMPORTANT: Use exp:// scheme, not http://
+          redirectUrl = `exp://localhost:8081/--/reset-password`;
+        } else {
+          // Standalone app format: myapp://reset-password
+          redirectUrl = `${Constants.expoConfig?.scheme ?? 'myapp'}://reset-password`;
+        }
+      }
+
+      console.log('[Reset Password] Sending reset email with redirect URL:', redirectUrl);
+
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
         {
-          redirectTo: 'myapp://reset-password',
+          redirectTo: redirectUrl,
         }
       );
 
@@ -66,7 +147,55 @@ export default function ResetPasswordScreen() {
     }
   };
 
-  if (success) {
+  const handleUpdatePassword = async () => {
+    setPasswordError('');
+    setConfirmPasswordError('');
+    setGeneralError('');
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.error || '');
+      return;
+    }
+
+    const confirmValidation = validateConfirmPassword(password, confirmPassword);
+    if (!confirmValidation.isValid) {
+      setConfirmPasswordError(confirmValidation.error || '');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password,
+      });
+
+      if (error) throw error;
+
+      Alert.alert(
+        'Password Updated',
+        'Your password has been successfully updated. Please sign in with your new password.',
+        [
+          {
+            text: 'Sign In',
+            onPress: () => {
+              router.replace('/(auth)/login');
+            },
+          },
+        ]
+      );
+    } catch (err) {
+      setGeneralError(
+        err instanceof Error ? err.message : 'Failed to update password'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show success screen after requesting reset
+  if (success && !isResetting) {
     return (
       <SafeAreaView style={styles.container}>
         <LinearGradient colors={GRADIENTS.navy} style={StyleSheet.absoluteFill} />
@@ -90,6 +219,115 @@ export default function ResetPasswordScreen() {
     );
   }
 
+  // Show password update form if user came from reset link
+  if (isResetting) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient colors={GRADIENTS.navy} style={StyleSheet.absoluteFill} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            <View style={styles.heroCard}>
+              <View style={styles.heroBadge}>
+                <Sparkles size={16} color={COLORS.accent} />
+                <Text style={styles.heroBadgeText}>Security first</Text>
+              </View>
+              <Text style={styles.title}>Set new password</Text>
+              <Text style={styles.subtitle}>
+                Enter your new password below. Make sure it&apos;s strong and secure.
+              </Text>
+            </View>
+
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>New Password</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      setPasswordError('');
+                      setGeneralError('');
+                    }}
+                    placeholder="Enter new password"
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                    autoComplete="password-new"
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}>
+                    {showPassword ? (
+                      <EyeOff size={20} color={COLORS.background} />
+                    ) : (
+                      <Eye size={20} color={COLORS.background} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                {passwordError && <Text style={styles.inputErrorText}>{passwordError}</Text>}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Confirm Password</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    value={confirmPassword}
+                    onChangeText={(text) => {
+                      setConfirmPassword(text);
+                      setConfirmPasswordError('');
+                      setGeneralError('');
+                    }}
+                    placeholder="Confirm new password"
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                    autoComplete="password-new"
+                    secureTextEntry={!showConfirmPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    {showConfirmPassword ? (
+                      <EyeOff size={20} color={COLORS.background} />
+                    ) : (
+                      <Eye size={20} color={COLORS.background} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                {confirmPasswordError && <Text style={styles.inputErrorText}>{confirmPasswordError}</Text>}
+              </View>
+
+              {generalError && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{generalError}</Text>
+                </View>
+              )}
+
+              <Button
+                title="Update Password"
+                onPress={handleUpdatePassword}
+                loading={loading}
+                style={styles.submitButton}
+              />
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Remember your password?</Text>
+                <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+                  <Text style={styles.footerLink}>Back to login</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  // Show request reset form (default)
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={GRADIENTS.navy} style={StyleSheet.absoluteFill} />
@@ -111,11 +349,10 @@ export default function ResetPasswordScreen() {
             </View>
             <Text style={styles.title}>Reset your access</Text>
             <Text style={styles.subtitle}>
-              We’ll email you a secure magic link to update your password. The link stays live for 10
-              minutes.
+              We'll email you a secure link to update your password. The link stays live for 1 hour.
             </Text>
             <View style={styles.supportList}>
-              <Text style={styles.supportItem}>• Zero-knowledge reset flow</Text>
+              <Text style={styles.supportItem}>• Secure reset flow</Text>
               <Text style={styles.supportItem}>• Support team on standby</Text>
             </View>
           </View>
@@ -143,7 +380,7 @@ export default function ResetPasswordScreen() {
 
             <Button
               title="Send reset instructions"
-              onPress={handleResetPassword}
+              onPress={handleRequestReset}
               loading={loading}
               style={styles.submitButton}
             />
@@ -292,5 +529,45 @@ const styles = StyleSheet.create({
   },
   successCta: {
     minWidth: 200,
+  },
+  inputContainer: {
+    marginBottom: SPACING.md,
+  },
+  inputLabel: {
+    ...TYPOGRAPHY.label,
+    color: COLORS.background,
+    marginBottom: SPACING.xs,
+    letterSpacing: 0.6,
+  },
+  inputWrapper: {
+    position: 'relative',
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.inputBackground,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    ...SHADOWS.sm,
+    overflow: 'hidden',
+  },
+  input: {
+    height: 54,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.lg,
+    paddingRight: 50,
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text,
+    fontFamily: FONT_FAMILY.body,
+    backgroundColor: 'transparent',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: SPACING.md,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  inputErrorText: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.background,
+    marginTop: SPACING.xs,
   },
 });
