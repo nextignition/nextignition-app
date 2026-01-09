@@ -97,14 +97,32 @@ export default function Index() {
     }
 
     // Check URL params for password reset indicators
+    // Supabase sends: type=recovery&token=xxx or type=recovery&access_token=xxx
     const isPasswordReset = params.type === 'recovery' || 
-                           params.access_token || 
-                           params.token_hash;
+                           (params.type === 'recovery' && (params.token || params.access_token || params.token_hash));
 
     if (isPasswordReset) {
-      console.log('[Index] Password reset detected, routing to reset-password');
+      console.log('[Index] Password reset detected, routing to reset-password', {
+        type: params.type,
+        hasToken: !!(params.token || params.access_token || params.token_hash),
+      });
       router.replace('/(auth)/reset-password');
       return;
+    }
+    
+    // Also check if we're on root path with recovery params (fallback)
+    if (pathname === '/' || pathname === '' || !pathname) {
+      const urlParams = new URLSearchParams(
+        typeof window !== 'undefined' ? window.location.search : ''
+      );
+      const urlType = urlParams.get('type');
+      const urlToken = urlParams.get('token') || urlParams.get('access_token');
+      
+      if (urlType === 'recovery' && urlToken) {
+        console.log('[Index] Password reset detected in root URL params');
+        router.replace('/(auth)/reset-password');
+        return;
+      }
     }
 
     // Check if there's a session that might be from password reset

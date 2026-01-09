@@ -107,18 +107,20 @@ export default function ResetPasswordScreen() {
 
     try {
       // Build redirect URL for password reset
-      // IMPORTANT: This must match one of the redirect URLs in Supabase Dashboard
+      // IMPORTANT: This must match EXACTLY one of the redirect URLs in Supabase Dashboard
+      // NO trailing slashes, NO spaces, NO wildcards - exact match only
       let redirectUrl: string;
       
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         // For web, use the full URL with /reset-password route
-        const baseUrl = window.location.origin;
-        redirectUrl = `${baseUrl}/reset-password`;
+        // Trim any whitespace and ensure no trailing slash
+        const baseUrl = window.location.origin.trim();
+        redirectUrl = `${baseUrl}/reset-password`.trim();
         console.log('[Reset Password] Email redirect URL (web):', redirectUrl);
       } else {
         // For mobile, use deep link that opens the app
-        const scheme = Constants.expoConfig?.scheme || 'nextignition';
-        redirectUrl = `${scheme}://reset-password`;
+        const scheme = (Constants.expoConfig?.scheme || 'nextignition').trim();
+        redirectUrl = `${scheme}://reset-password`.trim();
         console.log('[Reset Password] Email redirect URL (mobile):', redirectUrl);
       }
 
