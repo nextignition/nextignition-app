@@ -378,6 +378,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: SPACING.lg,
     gap: SPACING.xl,
+    maxWidth: 720,
+    width: '100%',
+    alignSelf: 'center',
   },
   heroCard: {
     borderRadius: BORDER_RADIUS.xl,

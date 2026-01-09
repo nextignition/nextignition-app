@@ -238,6 +238,9 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     justifyContent: 'center',
     gap: SPACING.xl,
+    maxWidth: 520,
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',

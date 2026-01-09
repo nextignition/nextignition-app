@@ -267,6 +267,10 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     justifyContent: 'center',
     gap: SPACING.xl,
+    // Standard auth layout on web: centered, constrained column
+    maxWidth: 960,
+    width: '100%',
+    alignSelf: 'center',
   },
   hero: {
     padding: SPACING.xl,
