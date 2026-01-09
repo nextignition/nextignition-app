@@ -75,17 +75,19 @@ export default function RegisterScreen() {
 
     try {
       // Build redirect URL for email verification
+      // IMPORTANT: This must match one of the redirect URLs in Supabase Dashboard
       let emailRedirectTo: string;
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        // For web, use the current origin + email-verified route
-        // Make sure this matches your deployed web URL
+        // For web, use the full URL with /email-verified route
+        // Use the actual deployed URL, not localhost
         const baseUrl = window.location.origin;
         emailRedirectTo = `${baseUrl}/email-verified`;
+        console.log('[Register] Email redirect URL (web):', emailRedirectTo);
       } else {
         // For mobile, use deep link that opens the app
-        // Format: nextignition://email-verified?type=signup&token=xxx
         const scheme = Constants.expoConfig?.scheme || 'nextignition';
         emailRedirectTo = `${scheme}://email-verified`;
+        console.log('[Register] Email redirect URL (mobile):', emailRedirectTo);
       }
 
       const { data, error } = await supabase.auth.signUp({

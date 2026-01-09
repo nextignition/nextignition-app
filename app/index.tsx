@@ -35,20 +35,25 @@ export default function Index() {
 
     // Check URL params for email verification
     // Supabase sends: type=signup&token=xxx or type=email&token=xxx
-    // Also check if we're coming from email verification redirect
-    const isEmailVerification = (params.type === 'signup' || params.type === 'email') && 
-                                (params.token || params.token_hash || params.access_token);
+    // Also check for access_token which Supabase uses after verification
+    const hasToken = !!(params.token || params.token_hash || params.access_token);
+    const isEmailVerification = (params.type === 'signup' || params.type === 'email') && hasToken;
     
     // Also check if pathname indicates email verification
     const isEmailVerifiedPath = pathname?.includes('email-verified');
     
     if (isEmailVerification || isEmailVerifiedPath) {
-      console.log('[Index] Email verification detected, processing...');
+      console.log('[Index] Email verification detected, processing...', {
+        type: params.type,
+        hasToken,
+        pathname,
+      });
       
       // Process the email verification token
       const processVerification = async () => {
         try {
           // Supabase automatically verifies the email when the link is clicked
+          // The verification happens on Supabase's server, then redirects here
           // Check if we have a session from the verification
           const { data: { session: verifiedSession } } = await supabase.auth.getSession();
           
@@ -73,6 +78,22 @@ export default function Index() {
       
       processVerification();
       return;
+    }
+    
+    // Also check if we're on root path with verification params (fallback)
+    // Sometimes Supabase redirects to root with params in the URL
+    if (pathname === '/' || pathname === '' || !pathname) {
+      const urlParams = new URLSearchParams(
+        typeof window !== 'undefined' ? window.location.search : ''
+      );
+      const urlType = urlParams.get('type');
+      const urlToken = urlParams.get('token') || urlParams.get('access_token');
+      
+      if ((urlType === 'signup' || urlType === 'email') && urlToken) {
+        console.log('[Index] Email verification detected in root URL params');
+        router.replace('/(auth)/email-verified');
+        return;
+      }
     }
 
     // Check URL params for password reset indicators
