@@ -74,13 +74,22 @@ export default function RegisterScreen() {
     setLoading(true);
 
     try {
+      // Build redirect URL for email verification
+      let emailRedirectTo: string;
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        // For web, use the current origin + email-verified route
+        emailRedirectTo = `${window.location.origin}/email-verified`;
+      } else {
+        // For mobile, use deep link to email-verified
+        emailRedirectTo = Constants.expoConfig?.extra?.AUTH_REDIRECT_URL ||
+          `${Constants.expoConfig?.scheme ?? 'nextignition'}://email-verified`;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo:
-            Constants.expoConfig?.extra?.AUTH_REDIRECT_URL ||
-            `${Constants.expoConfig?.scheme ?? 'nextignition'}://auth/callback`,
+          emailRedirectTo,
         },
       });
 

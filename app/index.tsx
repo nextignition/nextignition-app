@@ -20,12 +20,51 @@ export default function Index() {
       type: params.type,
       access_token: !!params.access_token,
       token_hash: !!params.token_hash,
+      token: !!params.token,
     });
 
-    // Check if we're already on reset-password route (from deep link)
+    // Check if we're already on email-verified or reset-password route (from deep link)
+    if (pathname?.includes('email-verified')) {
+      console.log('[Index] Already on email-verified, skipping redirect');
+      return;
+    }
     if (pathname?.includes('reset-password')) {
       console.log('[Index] Already on reset-password, skipping redirect');
       return; // Don't redirect if already on reset-password
+    }
+
+    // Check URL params for email verification
+    // Supabase sends: type=signup&token=xxx or type=email&token=xxx
+    const isEmailVerification = (params.type === 'signup' || params.type === 'email') && 
+                                (params.token || params.token_hash);
+    
+    if (isEmailVerification) {
+      console.log('[Index] Email verification detected, processing...');
+      
+      // Process the email verification token
+      const processVerification = async () => {
+        try {
+          // Supabase automatically verifies the email when the link is clicked
+          // We just need to redirect to the success page
+          const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+          
+          if (verifiedSession) {
+            console.log('[Index] Email verified, user has session');
+            // Sign out the temporary session created by verification
+            await supabase.auth.signOut();
+          }
+          
+          // Redirect to email verified page
+          router.replace('/(auth)/email-verified');
+        } catch (error) {
+          console.error('[Index] Error processing verification:', error);
+          // Still redirect to email-verified page (it will show success)
+          router.replace('/(auth)/email-verified');
+        }
+      };
+      
+      processVerification();
+      return;
     }
 
     // Check URL params for password reset indicators
