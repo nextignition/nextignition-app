@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Text, TextInput } from 'react-native';
+import { Text, TextInput, Platform } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   FunnelDisplay_500Medium,
@@ -20,7 +20,8 @@ import { COLORS, FONT_FAMILY } from '@/constants/theme';
 
 export default function RootLayout() {
   useFrameworkReady();
-  const [showSplash, setShowSplash] = useState(true);
+  // Only show splash on mobile, skip on web
+  const [showSplash, setShowSplash] = useState(Platform.OS !== 'web');
   const [fontsLoaded] = useFonts({
     FunnelDisplay_500Medium,
     FunnelDisplay_700Bold,
@@ -53,8 +54,20 @@ export default function RootLayout() {
     };
   }, [fontsLoaded]);
 
-  const shouldShowSplash = useMemo(() => !fontsLoaded || showSplash, [fontsLoaded, showSplash]);
+  // Skip splash screen on web, but still wait for fonts to load
+  const shouldShowSplash = useMemo(() => {
+    if (Platform.OS === 'web') {
+      return false; // Never show splash on web
+    }
+    return !fontsLoaded || showSplash;
+  }, [fontsLoaded, showSplash]);
 
+  // On web, wait for fonts but don't show splash screen
+  if (Platform.OS === 'web' && !fontsLoaded) {
+    return null; // Wait for fonts to load silently
+  }
+
+  // Show splash screen only on mobile
   if (shouldShowSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
