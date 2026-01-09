@@ -213,25 +213,45 @@ export default function ResetPasswordScreen() {
 
       console.log('[Reset Password] Updating password...');
       
-      // Update password with timeout protection
+      // On web, ensure Supabase has processed URL hash fragments
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const hash = window.location.hash;
+        if (hash && (hash.includes('access_token') || hash.includes('type=recovery'))) {
+          console.log('[Reset Password] URL hash detected, waiting for Supabase to process...');
+          // Give Supabase time to process the hash and create session
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Re-check session after processing
+          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+          if (!refreshedSession) {
+            console.error('[Reset Password] Session not created from hash');
+            setLoading(false);
+            setGeneralError('Unable to verify reset link. Please click the link in your email again.');
+            return;
+          }
+          console.log('[Reset Password] Session refreshed from hash');
+        }
+      }
+      
+      // Update password with proper timeout handling
       const updatePromise = supabase.auth.updateUser({
         password: password,
       });
 
       // Add a timeout to prevent infinite loading
-      const timeoutId = setTimeout(() => {
-        console.error('[Reset Password] Update timed out');
-        setLoading(false);
-        setGeneralError('Password update timed out. Please try again.');
-      }, 15000); // 15 second timeout
+      const timeoutPromise = new Promise<{ error: any }>((resolve) => {
+        setTimeout(() => {
+          console.error('[Reset Password] Update timed out');
+          resolve({ error: { message: 'Password update timed out. Please try again or request a new reset link.' } });
+        }, 10000); // 10 second timeout
+      });
 
-      const { error } = await updatePromise;
-      clearTimeout(timeoutId);
-
-      if (error) {
-        console.error('[Reset Password] Update error:', error);
+      const result = await Promise.race([updatePromise, timeoutPromise]);
+      
+      if (result.error) {
+        console.error('[Reset Password] Update error:', result.error);
         setLoading(false);
-        setGeneralError(error.message || 'Failed to update password. Please try again.');
+        setGeneralError(result.error.message || 'Failed to update password. Please try again or request a new reset link.');
         return;
       }
 
