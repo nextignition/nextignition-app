@@ -106,27 +106,21 @@ export default function ResetPasswordScreen() {
     setLoading(true);
 
     try {
-      // For Expo Go, use exp:// scheme with localhost:8081
-      // For standalone apps, use the custom scheme (myapp://)
-      let redirectUrl = Constants.expoConfig?.extra?.AUTH_REDIRECT_URL;
+      // Build redirect URL for password reset
+      // IMPORTANT: This must match one of the redirect URLs in Supabase Dashboard
+      let redirectUrl: string;
       
-      if (!redirectUrl) {
-        // Check if running in Expo Go
-        const isExpoGo = Constants.executionEnvironment === 'storeClient' || 
-                         Constants.appOwnership === 'expo';
-        
-        if (isExpoGo) {
-          // Expo Go format: exp://localhost:8081/--/reset-password
-          // Note: On physical device, replace localhost with your computer's IP address
-          // IMPORTANT: Use exp:// scheme, not http://
-          redirectUrl = `exp://localhost:8081/--/reset-password`;
-        } else {
-          // Standalone app format: myapp://reset-password
-          redirectUrl = `${Constants.expoConfig?.scheme ?? 'myapp'}://reset-password`;
-        }
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        // For web, use the full URL with /reset-password route
+        const baseUrl = window.location.origin;
+        redirectUrl = `${baseUrl}/reset-password`;
+        console.log('[Reset Password] Email redirect URL (web):', redirectUrl);
+      } else {
+        // For mobile, use deep link that opens the app
+        const scheme = Constants.expoConfig?.scheme || 'nextignition';
+        redirectUrl = `${scheme}://reset-password`;
+        console.log('[Reset Password] Email redirect URL (mobile):', redirectUrl);
       }
-
-      console.log('[Reset Password] Sending reset email with redirect URL:', redirectUrl);
 
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
@@ -137,12 +131,15 @@ export default function ResetPasswordScreen() {
 
       if (error) throw error;
 
-      setSuccess(true);
+      // Navigate to check-email screen with the email address
+      router.replace({
+        pathname: '/(auth)/check-email-reset',
+        params: { email: email.trim() },
+      });
     } catch (err) {
       setGeneralError(
         err instanceof Error ? err.message : 'Failed to send reset email'
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -173,6 +170,7 @@ export default function ResetPasswordScreen() {
 
       if (error) throw error;
 
+      // Show success and redirect to login
       Alert.alert(
         'Password Updated',
         'Your password has been successfully updated. Please sign in with your new password.',
@@ -185,6 +183,11 @@ export default function ResetPasswordScreen() {
           },
         ]
       );
+      
+      // Also redirect after a short delay
+      setTimeout(() => {
+        router.replace('/(auth)/login');
+      }, 2000);
     } catch (err) {
       setGeneralError(
         err instanceof Error ? err.message : 'Failed to update password'
@@ -255,7 +258,7 @@ export default function ResetPasswordScreen() {
                       setGeneralError('');
                     }}
                     placeholder="Enter new password"
-                    placeholderTextColor="rgba(255,255,255,0.5)"
+                    placeholderTextColor={COLORS.textSecondary}
                     autoComplete="password-new"
                     secureTextEntry={!showPassword}
                   />
@@ -263,9 +266,9 @@ export default function ResetPasswordScreen() {
                     style={styles.eyeIcon}
                     onPress={() => setShowPassword(!showPassword)}>
                     {showPassword ? (
-                      <EyeOff size={20} color={COLORS.background} />
+                      <EyeOff size={20} color={COLORS.textSecondary} />
                     ) : (
-                      <Eye size={20} color={COLORS.background} />
+                      <Eye size={20} color={COLORS.textSecondary} />
                     )}
                   </TouchableOpacity>
                 </View>
@@ -284,7 +287,7 @@ export default function ResetPasswordScreen() {
                       setGeneralError('');
                     }}
                     placeholder="Confirm new password"
-                    placeholderTextColor="rgba(255,255,255,0.5)"
+                    placeholderTextColor={COLORS.textSecondary}
                     autoComplete="password-new"
                     secureTextEntry={!showConfirmPassword}
                   />
@@ -292,9 +295,9 @@ export default function ResetPasswordScreen() {
                     style={styles.eyeIcon}
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
                     {showConfirmPassword ? (
-                      <EyeOff size={20} color={COLORS.background} />
+                      <EyeOff size={20} color={COLORS.textSecondary} />
                     ) : (
-                      <Eye size={20} color={COLORS.background} />
+                      <Eye size={20} color={COLORS.textSecondary} />
                     )}
                   </TouchableOpacity>
                 </View>
@@ -535,7 +538,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     ...TYPOGRAPHY.label,
-    color: COLORS.background,
+    color: COLORS.text,
     marginBottom: SPACING.xs,
     letterSpacing: 0.6,
   },
@@ -544,7 +547,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
     backgroundColor: COLORS.inputBackground,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: COLORS.border,
     ...SHADOWS.sm,
     overflow: 'hidden',
   },
@@ -556,7 +559,7 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     color: COLORS.text,
     fontFamily: FONT_FAMILY.body,
-    backgroundColor: 'transparent',
+    backgroundColor: COLORS.inputBackground,
   },
   eyeIcon: {
     position: 'absolute',
@@ -567,7 +570,7 @@ const styles = StyleSheet.create({
   },
   inputErrorText: {
     fontSize: FONT_SIZES.xs,
-    color: COLORS.background,
+    color: COLORS.error,
     marginTop: SPACING.xs,
   },
 });
