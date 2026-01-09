@@ -56,17 +56,38 @@ export default function ResetPasswordScreen() {
         const hasAccessToken = !!params.access_token;
         const hasTokenHash = !!params.token_hash;
         
+        // On web, also check URL hash for auth tokens
+        let hasHashToken = false;
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          const hash = window.location.hash;
+          hasHashToken = hash.includes('access_token') || hash.includes('type=recovery');
+          console.log('[Reset Password] URL hash:', hash.substring(0, 50) + '...');
+        }
+        
         console.log('[Reset Password] Checking for reset session:', {
           urlType,
           hasAccessToken,
           hasTokenHash,
+          hasHashToken,
           params: Object.keys(params),
         });
         
-        if (urlType === 'recovery' || hasAccessToken || hasTokenHash) {
-          // User came from reset link - show password update form
-          console.log('[Reset Password] Detected reset link, showing password form');
-          setIsResetting(true);
+        if (urlType === 'recovery' || hasAccessToken || hasTokenHash || hasHashToken) {
+          // User came from reset link - wait a moment for Supabase to process the token
+          console.log('[Reset Password] Detected reset link, waiting for session...');
+          
+          // Give Supabase a moment to process the hash/token
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Check for session after processing
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log('[Reset Password] Session created from reset link');
+            setIsResetting(true);
+          } else {
+            console.warn('[Reset Password] Reset link detected but no session created');
+            setIsResetting(true); // Still show form, let user try
+          }
           return;
         }
         
@@ -167,28 +188,51 @@ export default function ResetPasswordScreen() {
 
     try {
       // Check if we have a valid session first
+      console.log('[Reset Password] Checking session before update...');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      console.log('[Reset Password] Session check result:', {
+        hasSession: !!session,
+        sessionError: sessionError?.message,
+        userId: session?.user?.id,
+      });
       
       if (sessionError) {
         console.error('[Reset Password] Session error:', sessionError);
-        throw new Error('No active session. Please use the link from your email again.');
+        setLoading(false);
+        setGeneralError('No active session. Please click the link in your reset email again, or request a new reset email.');
+        return;
       }
 
       if (!session) {
         console.error('[Reset Password] No session found');
-        throw new Error('No active session. Please use the link from your email again.');
+        setLoading(false);
+        setGeneralError('No active session. Please click the link in your reset email again, or request a new reset email.');
+        return;
       }
 
       console.log('[Reset Password] Updating password...');
       
-      // Update password
-      const { error } = await supabase.auth.updateUser({
+      // Update password with timeout protection
+      const updatePromise = supabase.auth.updateUser({
         password: password,
       });
 
+      // Add a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.error('[Reset Password] Update timed out');
+        setLoading(false);
+        setGeneralError('Password update timed out. Please try again.');
+      }, 15000); // 15 second timeout
+
+      const { error } = await updatePromise;
+      clearTimeout(timeoutId);
+
       if (error) {
         console.error('[Reset Password] Update error:', error);
-        throw error;
+        setLoading(false);
+        setGeneralError(error.message || 'Failed to update password. Please try again.');
+        return;
       }
 
       console.log('[Reset Password] Password updated successfully');
@@ -220,11 +264,11 @@ export default function ResetPasswordScreen() {
         );
       }
     } catch (err) {
-      console.error('[Reset Password] Error:', err);
-      setGeneralError(
-        err instanceof Error ? err.message : 'Failed to update password'
-      );
+      console.error('[Reset Password] Unexpected error:', err);
       setLoading(false);
+      setGeneralError(
+        err instanceof Error ? err.message : 'Failed to update password. Please try again.'
+      );
     }
   };
 
