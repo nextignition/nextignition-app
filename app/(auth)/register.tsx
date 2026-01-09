@@ -102,11 +102,11 @@ export default function RegisterScreen() {
 
       if (data.user) {
         await supabase.auth.signOut();
-        Alert.alert(
-          'Verify your email',
-          'We have sent a confirmation link to your inbox. Please verify your email before signing in.',
-        );
-        router.replace('/(auth)/login');
+        // Navigate to check-email screen with the email address
+        router.replace({
+          pathname: '/(auth)/check-email',
+          params: { email: email.trim() },
+        });
       }
     } catch (err) {
       setGeneralError(
