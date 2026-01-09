@@ -172,29 +172,35 @@ export default function ResetPasswordScreen() {
 
       if (error) throw error;
 
-      // Show success and redirect to login
-      Alert.alert(
-        'Password Updated',
-        'Your password has been successfully updated. Please sign in with your new password.',
-        [
-          {
-            text: 'Sign In',
-            onPress: () => {
-              router.replace('/(auth)/login');
-            },
-          },
-        ]
-      );
-      
-      // Also redirect after a short delay
-      setTimeout(() => {
+      // Show success message (web-compatible)
+      if (Platform.OS === 'web') {
+        // Use window.alert for web, then redirect
+        // Small delay to ensure async operations complete
+        await new Promise(resolve => setTimeout(resolve, 50));
+        window.alert('Password Updated\n\nYour password has been successfully updated. Please sign in with your new password.');
+        // Wait a moment for the alert to be processed, then redirect
+        await new Promise(resolve => setTimeout(resolve, 100));
         router.replace('/(auth)/login');
-      }, 2000);
+      } else {
+        // Use Alert.alert for mobile
+        setLoading(false); // Reset loading before showing alert
+        Alert.alert(
+          'Password Updated',
+          'Your password has been successfully updated. Please sign in with your new password.',
+          [
+            {
+              text: 'Sign In',
+              onPress: () => {
+                router.replace('/(auth)/login');
+              },
+            },
+          ]
+        );
+      }
     } catch (err) {
       setGeneralError(
         err instanceof Error ? err.message : 'Failed to update password'
       );
-    } finally {
       setLoading(false);
     }
   };
