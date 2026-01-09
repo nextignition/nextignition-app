@@ -187,7 +187,38 @@ export default function ResetPasswordScreen() {
     setLoading(true);
 
     try {
-      // Check if we have a valid session first
+      // On web, manually process URL hash fragments first
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const hash = window.location.hash;
+        if (hash && (hash.includes('access_token') || hash.includes('type=recovery'))) {
+          console.log('[Reset Password] Processing URL hash fragments...');
+          
+          // Parse hash fragments
+          const hashParams = new URLSearchParams(hash.substring(1)); // Remove #
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          const tokenType = hashParams.get('type');
+          
+          if (accessToken && refreshToken) {
+            console.log('[Reset Password] Found tokens in hash, setting session...');
+            // Set the session manually from hash tokens
+            const { data: { session: hashSession }, error: hashError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            
+            if (hashError) {
+              console.error('[Reset Password] Error setting session from hash:', hashError);
+            } else if (hashSession) {
+              console.log('[Reset Password] Session set from hash successfully');
+              // Clear the hash from URL
+              window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+          }
+        }
+      }
+      
+      // Check if we have a valid session
       console.log('[Reset Password] Checking session before update...');
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -212,26 +243,6 @@ export default function ResetPasswordScreen() {
       }
 
       console.log('[Reset Password] Updating password...');
-      
-      // On web, ensure Supabase has processed URL hash fragments
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        const hash = window.location.hash;
-        if (hash && (hash.includes('access_token') || hash.includes('type=recovery'))) {
-          console.log('[Reset Password] URL hash detected, waiting for Supabase to process...');
-          // Give Supabase time to process the hash and create session
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Re-check session after processing
-          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-          if (!refreshedSession) {
-            console.error('[Reset Password] Session not created from hash');
-            setLoading(false);
-            setGeneralError('Unable to verify reset link. Please click the link in your email again.');
-            return;
-          }
-          console.log('[Reset Password] Session refreshed from hash');
-        }
-      }
       
       // Update password with proper timeout handling
       const updatePromise = supabase.auth.updateUser({
