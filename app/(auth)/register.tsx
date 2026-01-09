@@ -78,11 +78,14 @@ export default function RegisterScreen() {
       let emailRedirectTo: string;
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         // For web, use the current origin + email-verified route
-        emailRedirectTo = `${window.location.origin}/email-verified`;
+        // Make sure this matches your deployed web URL
+        const baseUrl = window.location.origin;
+        emailRedirectTo = `${baseUrl}/email-verified`;
       } else {
-        // For mobile, use deep link to email-verified
-        emailRedirectTo = Constants.expoConfig?.extra?.AUTH_REDIRECT_URL ||
-          `${Constants.expoConfig?.scheme ?? 'nextignition'}://email-verified`;
+        // For mobile, use deep link that opens the app
+        // Format: nextignition://email-verified?type=signup&token=xxx
+        const scheme = Constants.expoConfig?.scheme || 'nextignition';
+        emailRedirectTo = `${scheme}://email-verified`;
       }
 
       const { data, error } = await supabase.auth.signUp({

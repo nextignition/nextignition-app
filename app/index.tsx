@@ -35,24 +35,32 @@ export default function Index() {
 
     // Check URL params for email verification
     // Supabase sends: type=signup&token=xxx or type=email&token=xxx
+    // Also check if we're coming from email verification redirect
     const isEmailVerification = (params.type === 'signup' || params.type === 'email') && 
-                                (params.token || params.token_hash);
+                                (params.token || params.token_hash || params.access_token);
     
-    if (isEmailVerification) {
+    // Also check if pathname indicates email verification
+    const isEmailVerifiedPath = pathname?.includes('email-verified');
+    
+    if (isEmailVerification || isEmailVerifiedPath) {
       console.log('[Index] Email verification detected, processing...');
       
       // Process the email verification token
       const processVerification = async () => {
         try {
           // Supabase automatically verifies the email when the link is clicked
-          // We just need to redirect to the success page
+          // Check if we have a session from the verification
           const { data: { session: verifiedSession } } = await supabase.auth.getSession();
           
           if (verifiedSession) {
             console.log('[Index] Email verified, user has session');
             // Sign out the temporary session created by verification
+            // This ensures user needs to log in with their password
             await supabase.auth.signOut();
           }
+          
+          // Small delay to ensure session is cleared
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           // Redirect to email verified page
           router.replace('/(auth)/email-verified');
