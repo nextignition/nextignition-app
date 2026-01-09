@@ -71,6 +71,7 @@ export default function RegisterScreen() {
       return;
     }
 
+    console.log('[Register] Starting account creation...');
     setLoading(true);
 
     try {
@@ -101,7 +102,18 @@ export default function RegisterScreen() {
       if (error) throw error;
 
       if (data.user) {
+        console.log('[Register] Account created successfully');
+        
+        // Reset loading state before navigation
+        setLoading(false);
+        
         await supabase.auth.signOut();
+        
+        // Small delay on web to ensure state updates are processed
+        if (Platform.OS === 'web') {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
         // Navigate to check-email screen with the email address
         router.replace({
           pathname: '/(auth)/check-email',
@@ -109,10 +121,10 @@ export default function RegisterScreen() {
         });
       }
     } catch (err) {
+      console.error('[Register] Error:', err);
       setGeneralError(
         err instanceof Error ? err.message : 'Failed to create account'
       );
-    } finally {
       setLoading(false);
     }
   };
