@@ -166,13 +166,34 @@ export default function ResetPasswordScreen() {
     setLoading(true);
 
     try {
+      // Check if we have a valid session first
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('[Reset Password] Session error:', sessionError);
+        throw new Error('No active session. Please use the link from your email again.');
+      }
+
+      if (!session) {
+        console.error('[Reset Password] No session found');
+        throw new Error('No active session. Please use the link from your email again.');
+      }
+
+      console.log('[Reset Password] Updating password...');
+      
+      // Update password
       const { error } = await supabase.auth.updateUser({
         password: password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Reset Password] Update error:', error);
+        throw error;
+      }
 
-      // Reset loading state before showing success message
+      console.log('[Reset Password] Password updated successfully');
+
+      // Reset loading state immediately
       setLoading(false);
 
       // Show success message (web-compatible)
@@ -199,6 +220,7 @@ export default function ResetPasswordScreen() {
         );
       }
     } catch (err) {
+      console.error('[Reset Password] Error:', err);
       setGeneralError(
         err instanceof Error ? err.message : 'Failed to update password'
       );
