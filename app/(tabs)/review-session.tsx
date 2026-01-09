@@ -198,12 +198,10 @@ export default function ReviewSessionScreen() {
       }
 
       // Redirect to mentorship page with reviews tab active
-      setTimeout(() => {
-        router.replace({
-          pathname: '/(tabs)/mentorship',
-          params: { tab: 'reviews' }
-        });
-      }, Platform.OS === 'web' ? 500 : 0);
+      router.replace({
+        pathname: '/(tabs)/mentorship',
+        params: { tab: 'reviews' }
+      });
     } catch (err: any) {
       console.error('Error submitting review:', err);
       Alert.alert('Error', err.message || 'Failed to submit review');

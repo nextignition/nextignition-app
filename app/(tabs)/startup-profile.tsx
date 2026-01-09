@@ -122,29 +122,34 @@ export default function StartupProfileScreen() {
         }
         
         if (!isActive) return;
-        
+
         setLoadingProfile(true);
         try {
-          // Refresh pitch materials to show newly uploaded files
-          await refreshPitchMaterials();
+          // Refresh pitch materials and load profile data in parallel
+          const [
+            ,
+            { data: startupData, error: startupError },
+            { data: profileData, error: profileError },
+          ] = await Promise.all([
+            // Refresh pitch materials to show newly uploaded files
+            refreshPitchMaterials(),
+            // Load startup profile
+            supabase
+              .from('startup_profiles')
+              .select('*')
+              .eq('owner_id', profileId)
+              .maybeSingle<StartupProfileRecord>(),
+            // Load user profile for social links
+            supabase
+              .from('profiles')
+              .select('linkedin_url, twitter_url, website_url')
+              .eq('id', profileId)
+              .single(),
+          ]);
 
-          // Load startup profile
-          const { data, error } = await supabase
-            .from('startup_profiles')
-            .select('*')
-            .eq('owner_id', profileId)
-            .maybeSingle<StartupProfileRecord>();
-
-          if (error && error.code !== 'PGRST116') {
-            throw error;
+          if (startupError && startupError.code !== 'PGRST116') {
+            throw startupError;
           }
-
-          // Load user profile for social links
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('linkedin_url, twitter_url, website_url')
-            .eq('id', profileId)
-            .single();
 
           if (profileError) {
             console.error('Error loading profile data:', profileError);
@@ -153,13 +158,13 @@ export default function StartupProfileScreen() {
           if (!isActive) return; // Check again before updating state
 
           // Update startup profile fields
-          if (data) {
-            setStartupName(data.name || '');
-            setDescription(data.description || '');
-            setStage(data.stage || '');
-            setIndustry(data.industry || '');
-            setWebsite(data.website || '');
-            setIsPublic(data.is_public ?? true);
+          if (startupData) {
+            setStartupName(startupData.name || '');
+            setDescription(startupData.description || '');
+            setStage(startupData.stage || '');
+            setIndustry(startupData.industry || '');
+            setWebsite(startupData.website || '');
+            setIsPublic(startupData.is_public ?? true);
           } else {
             // Fallback to profile data if no startup profile exists
             setStartupName(ventureName || '');
@@ -238,8 +243,9 @@ export default function StartupProfileScreen() {
       // Get the latest pitch deck and video URLs from pitch_materials
       const latestPitchDeck = pitchDecks.length > 0 ? pitchDecks[0] : null;
       const latestPitchVideo = pitchVideos.length > 0 ? pitchVideos[0] : null;
+      const nowIso = new Date().toISOString();
 
-      // Save startup profile to startup_profiles table
+      // Prepare payloads
       const startupPayload = {
         owner_id: profileId,
         name: startupName.trim(),
@@ -252,29 +258,29 @@ export default function StartupProfileScreen() {
         pitch_deck_uploaded_at: latestPitchDeck?.created_at || null,
         pitch_video_url: latestPitchVideo?.url || null,
         pitch_video_uploaded_at: latestPitchVideo?.created_at || null,
-        updated_at: new Date().toISOString(),
+        updated_at: nowIso,
       };
 
-      const { error: startupError } = await supabase
-        .from('startup_profiles')
-        .upsert(startupPayload, { onConflict: 'owner_id' })
-        .select()
-        .single<StartupProfileRecord>();
-
-      if (startupError) throw startupError;
-
-      // Save social links to profiles table
       const profilePayload = {
         linkedin_url: linkedinUrl.trim() || null,
         twitter_url: twitterUrl.trim() || null,
         website_url: websiteUrl.trim() || null,
       };
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update(profilePayload)
-        .eq('id', profileId);
+      // Save startup profile and social links in parallel for faster submit
+      const [{ error: startupError }, { error: profileError }] = await Promise.all([
+        supabase
+          .from('startup_profiles')
+          .upsert(startupPayload, { onConflict: 'owner_id' })
+          .select()
+          .single<StartupProfileRecord>(),
+        supabase
+          .from('profiles')
+          .update(profilePayload)
+          .eq('id', profileId),
+      ]);
 
+      if (startupError) throw startupError;
       if (profileError) throw profileError;
 
       showSuccess('Startup profile updated successfully!');
