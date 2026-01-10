@@ -23,20 +23,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_FAMILY, GRADIENTS, SHADOWS, theme } from '@/constants/theme';
 import { Search, Filter, Network, X, SlidersHorizontal } from 'lucide-react-native';
 
-const INDUSTRIES = [
-  { label: 'All Industries', value: '' },
-  { label: 'Technology', value: 'technology' },
-  { label: 'Healthcare', value: 'healthcare' },
-  { label: 'Finance', value: 'finance' },
-  { label: 'Education', value: 'education' },
-  { label: 'E-commerce', value: 'ecommerce' },
-  { label: 'SaaS', value: 'saas' },
-  { label: 'AI/ML', value: 'ai_ml' },
-  { label: 'Blockchain', value: 'blockchain' },
-  { label: 'Consumer', value: 'consumer' },
-  { label: 'B2B', value: 'b2b' },
-  { label: 'Other', value: 'other' },
-];
+import { INDUSTRIES_WITH_ALL } from '@/constants/industries';
+
+const INDUSTRIES = INDUSTRIES_WITH_ALL;
 
 const STAGES = [
   { label: 'All Stages', value: '' },

@@ -4,6 +4,7 @@ import { Input } from './Input';
 import { Picker } from './Picker';
 import { COLORS, SPACING, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
 import { UserRole } from '@/types/user';
+import { INDUSTRIES } from '@/constants/industries';
 
 interface RoleSpecificFieldsProps {
   role?: UserRole;
@@ -33,20 +34,6 @@ interface RoleSpecificFieldsProps {
   onExpertChange: (field: string, value: string) => void;
 }
 
-const INDUSTRIES = [
-  { label: 'Select industry', value: '' },
-  { label: 'Technology', value: 'technology' },
-  { label: 'Healthcare', value: 'healthcare' },
-  { label: 'Finance', value: 'finance' },
-  { label: 'Education', value: 'education' },
-  { label: 'E-commerce', value: 'ecommerce' },
-  { label: 'SaaS', value: 'saas' },
-  { label: 'AI/ML', value: 'ai_ml' },
-  { label: 'Blockchain', value: 'blockchain' },
-  { label: 'Consumer', value: 'consumer' },
-  { label: 'B2B', value: 'b2b' },
-  { label: 'Other', value: 'other' },
-];
 
 const INVESTMENT_STAGES = [
   { label: 'Select preferred stage', value: '' },

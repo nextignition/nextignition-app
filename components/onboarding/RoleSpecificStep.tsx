@@ -5,6 +5,8 @@ import { SPACING, FONT_SIZES, FONT_WEIGHTS, COLORS } from '@/constants/theme';
 import { OnboardingData } from '@/types/onboarding';
 import { UserRole } from '@/types/user';
 import { Picker } from '@/components/Picker';
+import { INDUSTRIES } from '@/constants/industries';
+import { INDUSTRIES } from '@/constants/industries';
 
 interface RoleSpecificStepProps {
   role: UserRole;
@@ -19,21 +21,6 @@ const VENTURE_STAGES = [
   { label: 'MVP', value: 'mvp' },
   { label: 'Growth', value: 'growth' },
   { label: 'Scale', value: 'scale' },
-];
-
-const INDUSTRIES = [
-  { label: 'Select industry', value: '' },
-  { label: 'Technology', value: 'technology' },
-  { label: 'Healthcare', value: 'healthcare' },
-  { label: 'Finance', value: 'finance' },
-  { label: 'Education', value: 'education' },
-  { label: 'E-commerce', value: 'ecommerce' },
-  { label: 'SaaS', value: 'saas' },
-  { label: 'AI/ML', value: 'ai_ml' },
-  { label: 'Blockchain', value: 'blockchain' },
-  { label: 'Consumer', value: 'consumer' },
-  { label: 'B2B', value: 'b2b' },
-  { label: 'Other', value: 'other' },
 ];
 
 const INVESTMENT_STAGES = [

@@ -19,6 +19,7 @@ import * as Sharing from 'expo-sharing';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { Picker } from '@/components/Picker';
+import { INDUSTRIES } from '@/constants/industries';
 import {
   BORDER_RADIUS,
   COLORS,
@@ -57,15 +58,6 @@ const STAGES = [
   { label: 'MVP', value: 'mvp' },
   { label: 'Growth', value: 'growth' },
   { label: 'Scale', value: 'scale' },
-];
-
-const INDUSTRIES = [
-  { label: 'Select industry', value: '' },
-  { label: 'Technology', value: 'technology' },
-  { label: 'Healthcare', value: 'healthcare' },
-  { label: 'Finance', value: 'finance' },
-  { label: 'Education', value: 'education' },
-  { label: 'E-commerce', value: 'ecommerce' },
 ];
 
 type StartupProfileRecord = {

@@ -37,14 +37,7 @@ import {
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 
-const INDUSTRIES = [
-  { label: 'Select industry', value: '' },
-  { label: 'Technology', value: 'technology' },
-  { label: 'Healthcare', value: 'healthcare' },
-  { label: 'Finance', value: 'finance' },
-  { label: 'Education', value: 'education' },
-  { label: 'E-commerce', value: 'ecommerce' },
-];
+import { INDUSTRIES } from '@/constants/industries';
 
 const SKILLS_OPTIONS = [
   'Product Strategy',
