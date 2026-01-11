@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
   TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import {
@@ -28,17 +28,47 @@ import {
 } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { validateEmail } from '@/utils/validation';
-import { Zap, ShieldCheck, Eye, EyeOff } from 'lucide-react-native';
+import { Zap, ShieldCheck, Eye, EyeOff, CheckCircle2 } from 'lucide-react-native';
 import { Logo } from '@/components/Logo';
 import { isAdminEmail } from '@/constants/admin';
 
-const HERO_STATS = [
-  { label: 'Active investors', value: '70+' },
-  { label: 'Global founders', value: '12k' },
-  { label: 'Capital raised', value: '$180M' },
-];
+// Format number with suffix (K, M, B)
+const formatNumber = (num: number): string => {
+  if (num >= 1000000000) {
+    return `${(num / 1000000000).toFixed(1).replace(/\.0$/, '')}B`;
+  }
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+  }
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+  }
+  return num.toString();
+};
+
+// Format currency
+const formatCurrency = (amount: number): string => {
+  if (amount >= 1000000000) {
+    return `$${(amount / 1000000000).toFixed(1).replace(/\.0$/, '')}B`;
+  }
+  if (amount >= 1000000) {
+    return `$${(amount / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+  }
+  if (amount >= 1000) {
+    return `$${(amount / 1000).toFixed(0)}K`;
+  }
+  return `$${amount.toFixed(0)}`;
+};
+
+// Platform stats type
+interface PlatformStats {
+  investor_count: number;
+  founder_count: number;
+  capital_raised: number;
+}
 
 export default function LoginScreen() {
+  const params = useLocalSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -46,6 +76,57 @@ export default function LoginScreen() {
   const [generalError, setGeneralError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
+
+  // Fetch platform stats on mount
+  useEffect(() => {
+    const fetchPlatformStats = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_platform_stats');
+        
+        if (error) {
+          console.error('Error fetching platform stats:', error);
+          return;
+        }
+        
+        if (data) {
+          setPlatformStats(data);
+        }
+      } catch (err) {
+        console.error('Error fetching platform stats:', err);
+      }
+    };
+
+    fetchPlatformStats();
+  }, []);
+
+  // Check for password reset success
+  useEffect(() => {
+    // Check URL params
+    if (params.reset === 'success') {
+      setShowSuccessMessage(true);
+      // Clear the param from URL
+      router.replace('/(auth)/login');
+      // Hide message after 5 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+    }
+
+    // Check sessionStorage (for web)
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.sessionStorage) {
+      const success = window.sessionStorage.getItem('passwordResetSuccess');
+      if (success === 'true') {
+        setShowSuccessMessage(true);
+        window.sessionStorage.removeItem('passwordResetSuccess');
+        // Hide message after 5 seconds
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+        }, 5000);
+      }
+    }
+  }, [params.reset]);
 
   const handleLogin = async () => {
     setEmailError('');
@@ -154,12 +235,30 @@ export default function LoginScreen() {
               breakout founders.
             </Text>
             <View style={styles.heroStats}>
-              {HERO_STATS.map((stat) => (
-                <View key={stat.label} style={styles.statCard}>
-                  <Text style={styles.statValue}>{stat.value}</Text>
-                  <Text style={styles.statLabel}>{stat.label}</Text>
-                </View>
-              ))}
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>
+                  {platformStats !== null
+                    ? `${formatNumber(platformStats.investor_count)}+` 
+                    : '70+'}
+                </Text>
+                <Text style={styles.statLabel}>Active investors</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>
+                  {platformStats !== null
+                    ? formatNumber(platformStats.founder_count) 
+                    : '12k'}
+                </Text>
+                <Text style={styles.statLabel}>Global founders</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>
+                  {platformStats !== null
+                    ? formatCurrency(platformStats.capital_raised) 
+                    : '$180M'}
+                </Text>
+                <Text style={styles.statLabel}>Capital raised</Text>
+              </View>
             </View>
           </View>
 
@@ -227,6 +326,15 @@ export default function LoginScreen() {
               style={styles.forgotPassword}>
               <Text style={styles.forgotPasswordText}>Forgot password?</Text>
             </TouchableOpacity>
+
+            {showSuccessMessage && (
+              <View style={styles.successContainer}>
+                <CheckCircle2 size={20} color={COLORS.success} style={styles.successIcon} />
+                <Text style={styles.successText}>
+                  Password updated successfully! Please sign in with your new password.
+                </Text>
+              </View>
+            )}
 
             {generalError && (
               <View style={styles.errorContainer}>
@@ -373,6 +481,26 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodyStrong,
     fontSize: FONT_SIZES.sm,
     color: COLORS.background,
+  },
+  successContainer: {
+    backgroundColor: `${COLORS.success}15`,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.sm,
+    marginBottom: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    borderWidth: 1,
+    borderColor: `${COLORS.success}40`,
+  },
+  successIcon: {
+    flexShrink: 0,
+  },
+  successText: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.success,
+    fontSize: FONT_SIZES.sm,
+    flex: 1,
   },
   errorContainer: {
     backgroundColor: `${COLORS.error}15`,

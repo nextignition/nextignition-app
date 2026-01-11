@@ -6,7 +6,6 @@ import { OnboardingData } from '@/types/onboarding';
 import { UserRole } from '@/types/user';
 import { Picker } from '@/components/Picker';
 import { INDUSTRIES } from '@/constants/industries';
-import { INDUSTRIES } from '@/constants/industries';
 
 interface RoleSpecificStepProps {
   role: UserRole;

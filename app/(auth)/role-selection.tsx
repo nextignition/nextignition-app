@@ -35,6 +35,12 @@ export default function RoleSelectionScreen() {
       return;
     }
 
+    // Prevent multiple submissions
+    if (loading) {
+      console.warn('[Role Selection] Already submitting, ignoring duplicate call');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -44,22 +50,46 @@ export default function RoleSelectionScreen() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error('No user found');
+        throw new Error('No user found. Please log in again.');
       }
 
-      const { error: updateError } = await supabase
+      console.log('[Role Selection] Updating role to:', selectedRole, 'for user:', user.id);
+
+      // Update role with timeout
+      const updatePromise = supabase
         .from('profiles')
         .update({ role: selectedRole, updated_at: new Date().toISOString() })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
+      const timeoutPromise = new Promise<{ error: any }>((resolve) => {
+        setTimeout(() => {
+          resolve({ error: { message: 'Request timeout. Please check your connection and try again.' } });
+        }, 10000); // 10 second timeout
+      });
 
-      router.replace('/(auth)/onboarding');
+      const { error: updateError } = await Promise.race([
+        updatePromise,
+        timeoutPromise,
+      ]) as any;
+
+      if (updateError) {
+        console.error('[Role Selection] Update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('[Role Selection] Role updated successfully, navigating to onboarding');
+
+      // Small delay to ensure state is updated before navigation
+      setTimeout(() => {
+        router.replace('/(auth)/onboarding');
+      }, 300);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save role');
-    } finally {
-      setLoading(false);
+      console.error('[Role Selection] Error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save role. Please try again.';
+      setError(errorMessage);
+      setLoading(false); // Reset loading on error
     }
+    // Note: Don't reset loading in finally - let navigation handle it or reset on error
   };
 
   return (
@@ -79,15 +109,18 @@ export default function RoleSelectionScreen() {
           </Text>
         </View>
 
-        <View style={styles.rolesContainer}>
+        <View style={styles.rolesContainer} pointerEvents={loading ? 'none' : 'auto'}>
           {ROLE_OPTIONS.map((role) => (
             <RoleCard
               key={role.id}
               {...role}
               selected={selectedRole === role.id}
               onPress={() => {
-                setSelectedRole(role.id);
-                setError(null);
+                if (!loading) {
+                  console.log('[Role Selection] Role selected:', role.id);
+                  setSelectedRole(role.id);
+                  setError(null);
+                }
               }}
             />
           ))}
@@ -103,7 +136,7 @@ export default function RoleSelectionScreen() {
           title="Continue"
           onPress={handleContinue}
           loading={loading}
-          disabled={!selectedRole}
+          disabled={!selectedRole || loading}
           style={styles.button}
         />
       </ScrollView>

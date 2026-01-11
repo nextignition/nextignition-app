@@ -56,16 +56,27 @@ export function RoleCard({
 }: RoleCardProps) {
   const IconComponent = ICON_MAP[icon] || Building2;
 
+  const handlePress = (e: any) => {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    if (onPress) {
+      onPress();
+    }
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      onPress={onPress}
+      onPress={handlePress}
+      disabled={false}
       style={[
         styles.card,
         selected && styles.cardSelected,
         Platform.OS === 'web' && styles.cardWeb,
-      ]}>
-      <View style={styles.iconShell}>
+      ]}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}>
+      <View style={styles.iconShell} pointerEvents="none">
         {selected ? (
           <LinearGradient
             colors={GRADIENTS.primary}
@@ -80,11 +91,11 @@ export function RoleCard({
           </View>
         )}
       </View>
-      <View style={styles.copy}>
+      <View style={styles.copy} pointerEvents="none">
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
-      {selected && <View style={styles.selectedIndicator} />}
+      {selected && <View style={styles.selectedIndicator} pointerEvents="none" />}
     </TouchableOpacity>
   );
 }
@@ -101,6 +112,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING.md,
     alignItems: 'center',
+    position: 'relative',
+    zIndex: 1,
   },
   cardSelected: {
     borderColor: COLORS.primary,
@@ -109,6 +122,8 @@ const styles = StyleSheet.create({
   },
   cardWeb: {
     cursor: 'pointer',
+    // @ts-ignore - Web-specific styles
+    userSelect: 'none',
   },
   iconShell: {
     width: 72,

@@ -228,6 +228,12 @@ export default function OnboardingScreen() {
   const handleComplete = async () => {
     if (!validateStep()) return;
 
+    // Prevent multiple submissions
+    if (loading) {
+      console.warn('[Onboarding] Already submitting, ignoring duplicate call');
+      return;
+    }
+
     setLoading(true);
     setSubmitError(null);
 
@@ -236,7 +242,11 @@ export default function OnboardingScreen() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) throw new Error('No user found');
+      if (!user) {
+        throw new Error('No user found. Please log in again.');
+      }
+
+      console.log('[Onboarding] Starting submission for user:', user.id);
 
       const payload: Record<string, any> = {
         full_name: data.fullName,
@@ -283,47 +293,92 @@ export default function OnboardingScreen() {
         payload.hourly_rate = data.hourlyRate ?? null;
       }
 
-      const { error: profileError } = await supabase
+      console.log('[Onboarding] Updating profile with payload:', Object.keys(payload));
+
+      // Update profile with timeout
+      const profileUpdatePromise = supabase
         .from('profiles')
         .update(payload)
         .eq('id', user.id);
 
-      if (profileError) throw profileError;
+      const timeoutPromise = new Promise<{ error: any }>((resolve) => {
+        setTimeout(() => {
+          resolve({ error: { message: 'Request timeout. Please check your connection and try again.' } });
+        }, 15000); // 15 second timeout
+      });
+
+      const { error: profileError } = await Promise.race([
+        profileUpdatePromise,
+        timeoutPromise,
+      ]) as any;
+
+      if (profileError) {
+        console.error('[Onboarding] Profile update error:', profileError);
+        throw profileError;
+      }
+
+      console.log('[Onboarding] Profile updated successfully');
 
       // For founders/cofounders, also create startup_profiles entry
       if (profile?.role === 'founder' || profile?.role === 'cofounder') {
-        const startupPayload = {
-          owner_id: user.id,
-          name: data.ventureName || '',
-          description: data.ventureDescription || null,
-          industry: data.ventureIndustry || null,
-          stage: data.ventureStage || null,
-          is_public: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+        try {
+          const startupPayload = {
+            owner_id: user.id,
+            name: data.ventureName || '',
+            description: data.ventureDescription || null,
+            industry: data.ventureIndustry || null,
+            stage: data.ventureStage || null,
+            is_public: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
 
-        const { error: startupError } = await supabase
-          .from('startup_profiles')
-          .upsert(startupPayload, { onConflict: 'owner_id' });
+          const { error: startupError } = await supabase
+            .from('startup_profiles')
+            .upsert(startupPayload, { onConflict: 'owner_id' });
 
-        if (startupError) {
-          console.error('Error creating startup profile:', startupError);
-          // Don't throw - allow onboarding to complete even if startup_profiles fails
+          if (startupError) {
+            console.error('[Onboarding] Error creating startup profile:', startupError);
+            // Don't throw - allow onboarding to complete even if startup_profiles fails
+          } else {
+            console.log('[Onboarding] Startup profile created/updated successfully');
+          }
+        } catch (startupErr) {
+          console.error('[Onboarding] Startup profile error (non-blocking):', startupErr);
+          // Continue even if this fails
         }
       }
 
-      await refreshProfile();
-      router.replace('/(tabs)');
+      // Refresh profile before navigation
+      console.log('[Onboarding] Refreshing profile...');
+      try {
+        await Promise.race([
+          refreshProfile(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile refresh timeout')), 10000)
+          ),
+        ]);
+        console.log('[Onboarding] Profile refreshed successfully');
+      } catch (refreshErr) {
+        console.warn('[Onboarding] Profile refresh warning (non-blocking):', refreshErr);
+        // Continue with navigation even if refresh fails
+      }
+
+      // Navigate to main app - use a small delay to ensure state is updated
+      console.log('[Onboarding] Navigating to main app...');
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 300);
+
     } catch (err) {
-      console.error('Error completing onboarding:', err);
+      console.error('[Onboarding] Error completing onboarding:', err);
       const message =
         err instanceof Error ? err.message : 'Failed to complete onboarding. Please try again.';
       setSubmitError(message);
+      setLoading(false); // Reset loading on error
       Alert.alert('Something went wrong', message);
-    } finally {
-      setLoading(false);
     }
+    // Note: Don't reset loading in finally - only reset on error or let navigation handle it
   };
 
 
