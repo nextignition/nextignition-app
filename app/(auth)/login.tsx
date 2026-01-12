@@ -229,7 +229,7 @@ export default function LoginScreen() {
               resizeMode="contain"
             />
             
-            <Text style={styles.heroTitle}>Ignite the next chapter of your startup</Text>
+            <Text style={styles.heroTitle}>Ignite the next chapter of your startup--------------</Text>
             <Text style={styles.heroSubtitle}>
               Tap into curated capital, operator knowledge, and a private network designed for
               breakout founders.
