@@ -65,14 +65,9 @@ export function useExploreNetwork(initialFilters?: NetworkFilters) {
   const [startupProfiles, setStartupProfiles] = useState<StartupProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<NetworkFilters>({});
 
-  // Update filters when initialFilters change
-  useEffect(() => {
-    if (initialFilters) {
-      setFilters(initialFilters);
-    }
-  }, [initialFilters?.search, initialFilters?.industry, initialFilters?.stage, initialFilters?.location]);
+  // Use initialFilters directly instead of copying to state
+  const filters = initialFilters || {};
 
   const fetchProfiles = useCallback(async () => {
     if (!user?.id || !profile?.role) {
@@ -83,6 +78,8 @@ export function useExploreNetwork(initialFilters?: NetworkFilters) {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('[useExploreNetwork] Fetching with filters:', filters);
 
       // Determine which profiles to fetch based on current user's role
       let targetRoles: string[] = [];
@@ -196,19 +193,16 @@ export function useExploreNetwork(initialFilters?: NetworkFilters) {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, profile?.role, filters]);
+  }, [user?.id, profile?.role, filters.search, filters.industry, filters.stage, filters.location, filters.role]);
 
   useEffect(() => {
-    fetchProfiles();
+    // Debounce the fetch for search queries
+    const timeoutId = setTimeout(() => {
+      fetchProfiles();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [fetchProfiles]);
-
-  const updateFilters = useCallback((newFilters: Partial<NetworkFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  }, []);
-
-  const clearFilters = useCallback(() => {
-    setFilters({});
-  }, []);
 
   return {
     profiles,
@@ -217,8 +211,6 @@ export function useExploreNetwork(initialFilters?: NetworkFilters) {
     loading,
     error,
     filters,
-    updateFilters,
-    clearFilters,
     refetch: fetchProfiles,
   };
 }

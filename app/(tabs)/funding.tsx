@@ -113,11 +113,20 @@ export default function FundingScreen() {
     }
   }, [params.editRequestId, params.openCreateModal, opportunities, isFounder]);
 
+  // Debounce the search filter update
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery !== filters.search) {
+        updateFilters({ search: searchQuery });
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, filters.search, updateFilters]);
+
   const handleSearch = useCallback((text: string) => {
     setSearchQuery(text);
-    // Update filters immediately for real-time search
-    updateFilters({ search: text });
-  }, [updateFilters]);
+  }, []);
 
   const activeFilterCount =
     filters.industries.length +

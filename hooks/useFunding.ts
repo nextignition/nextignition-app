@@ -397,11 +397,11 @@ export function useFundingOpportunities() {
     return filtered;
   }, [opportunities, filters]);
 
-  const updateFilters = (newFilters: Partial<FilterOptions>) => {
+  const updateFilters = useCallback((newFilters: Partial<FilterOptions>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
-  };
+  }, []);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilters({
       search: '',
       industries: [],
@@ -412,7 +412,7 @@ export function useFundingOpportunities() {
       minValuation: 0,
       maxValuation: 100000000,
     });
-  };
+  }, []);
 
   const refresh = useCallback(async () => {
     await fetchOpportunities();

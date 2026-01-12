@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -72,13 +72,15 @@ export default function AdminUsersScreen() {
   const [users, setUsers] = useState(MOCK_USERS);
   const { isMobile } = useResponsive();
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      const matchesSearch =
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [users, searchQuery, statusFilter]);
 
   const handleApprove = (userId: string) => {
     Alert.alert('Approve User', 'Are you sure you want to approve this user?', [

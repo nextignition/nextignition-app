@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -83,16 +83,18 @@ export default function AdminContentScreen() {
   const [statusFilter, setStatusFilter] = useState<ContentStatus>('all');
   const [content, setContent] = useState(MOCK_CONTENT);
 
-  const filteredContent = content.filter((item) => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.owner.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = contentType === 'all' || 
-                       (contentType === 'profiles' && item.type === 'profile') ||
-                       (contentType === 'pitch_decks' && item.type === 'pitch_deck') ||
-                       (contentType === 'pitch_videos' && item.type === 'pitch_video');
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchesSearch && matchesType && matchesStatus;
-  });
+  const filteredContent = useMemo(() => {
+    return content.filter((item) => {
+      const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           item.owner.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = contentType === 'all' || 
+                         (contentType === 'profiles' && item.type === 'profile') ||
+                         (contentType === 'pitch_decks' && item.type === 'pitch_deck') ||
+                         (contentType === 'pitch_videos' && item.type === 'pitch_video');
+      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [content, searchQuery, contentType, statusFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

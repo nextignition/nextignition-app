@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -86,6 +86,24 @@ export default function FeedScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [postTypeFilter, setPostTypeFilter] = useState('');
+
+  // Filter posts using useMemo to prevent re-filtering on every render
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+          post.content?.toLowerCase().includes(query) ||
+          post.user_name?.toLowerCase().includes(query) ||
+          post.company_name?.toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+      }
+      if (postTypeFilter && post.type !== postTypeFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [posts, searchQuery, postTypeFilter]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -253,7 +271,7 @@ export default function FeedScreen() {
           </View>
         )}
 
-        {posts.length === 0 && !loading ? (
+        {filteredPosts.length === 0 && !loading ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>No posts yet</Text>
             <Text style={styles.emptyText}>
@@ -269,22 +287,7 @@ export default function FeedScreen() {
           </View>
         ) : (
           <View style={styles.postsList}>
-            {posts
-              .filter((post) => {
-                if (searchQuery) {
-                  const query = searchQuery.toLowerCase();
-                  const matchesSearch =
-                    post.content?.toLowerCase().includes(query) ||
-                    post.user_name?.toLowerCase().includes(query) ||
-                    post.company_name?.toLowerCase().includes(query);
-                  if (!matchesSearch) return false;
-                }
-                if (postTypeFilter && post.type !== postTypeFilter) {
-                  return false;
-                }
-                return true;
-              })
-              .map((post) => {
+            {filteredPosts.map((post) => {
                 const isOwner = post.user_id === user?.id;
                 return (
                 <View key={post.id} style={styles.postCard}>

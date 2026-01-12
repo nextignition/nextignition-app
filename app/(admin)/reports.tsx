@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -66,15 +66,17 @@ export default function AdminReportsScreen() {
   const [priorityFilter, setPriorityFilter] = useState<ReportPriority>('all');
   const [reports, setReports] = useState(MOCK_REPORTS);
 
-  const filteredReports = reports.filter((report) => {
-    const matchesSearch =
-      report.reportedUser.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reportedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reason.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || report.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
+  const filteredReports = useMemo(() => {
+    return reports.filter((report) => {
+      const matchesSearch =
+        report.reportedUser.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        report.reportedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        report.reason.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
+      const matchesPriority = priorityFilter === 'all' || report.priority === priorityFilter;
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [reports, searchQuery, statusFilter, priorityFilter]);
 
   const handleResolve = (reportId: string) => {
     Alert.alert('Resolve Report', 'Mark this report as resolved?', [
