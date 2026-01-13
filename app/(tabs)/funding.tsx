@@ -8,6 +8,7 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Filter, Grid3x3, List, RefreshCw, BarChart3, Plus } from 'lucide-react-native';
@@ -24,6 +25,52 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocalSearchParams, router } from 'expo-router';
 
 type ViewMode = 'grid' | 'table';
+
+// Memoized SearchInput component to prevent re-renders
+const SearchInput = React.memo(({ 
+  value, 
+  onChangeText, 
+  onSubmit, 
+  onKeyPress,
+  placeholder,
+  showSearchButton,
+  onSearchPress 
+}: { 
+  value: string;
+  onChangeText: (text: string) => void;
+  onSubmit: () => void;
+  onKeyPress: (e: any) => void;
+  placeholder: string;
+  showSearchButton: boolean;
+  onSearchPress: () => void;
+}) => (
+  <View style={styles.searchContainer}>
+    <Search size={20} color={COLORS.textSecondary} strokeWidth={2} />
+    <TextInput
+      style={styles.searchInput}
+      placeholder={placeholder}
+      placeholderTextColor={COLORS.textSecondary}
+      value={value}
+      onChangeText={onChangeText}
+      onSubmitEditing={onSubmit}
+      onKeyPress={onKeyPress}
+      autoCapitalize="none"
+      autoCorrect={false}
+      returnKeyType="search"
+      clearButtonMode="while-editing"
+    />
+    {showSearchButton && (
+      <TouchableOpacity
+        onPress={onSearchPress}
+        style={styles.searchButton}
+        activeOpacity={0.7}>
+        <Text style={styles.searchButtonText}>Search</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+));
+
+SearchInput.displayName = 'SearchInput';
 
 export default function FundingScreen() {
   const { profile, user } = useAuth();
@@ -45,7 +92,9 @@ export default function FundingScreen() {
   const [expressInterestOpportunity, setExpressInterestOpportunity] = useState<FundingOpportunity | null>(null);
   const [editingRequestId, setEditingRequestId] = useState<string | null>(null);
   const [pendingReopenId, setPendingReopenId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  // Separate states for input and applied search
+  const [searchInput, setSearchInput] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const params = useLocalSearchParams();
 
   const isInvestor = profile?.role === 'investor';
@@ -113,20 +162,22 @@ export default function FundingScreen() {
     }
   }, [params.editRequestId, params.openCreateModal, opportunities, isFounder]);
 
-  // Debounce the search filter update
+  // Update filters only when search is submitted
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery !== filters.search) {
-        updateFilters({ search: searchQuery });
-      }
-    }, 300); // 300ms debounce
+    if (appliedSearch !== filters.search) {
+      updateFilters({ search: appliedSearch });
+    }
+  }, [appliedSearch]);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, filters.search, updateFilters]);
+  const handleSearchSubmit = useCallback(() => {
+    setAppliedSearch(searchInput);
+  }, [searchInput]);
 
-  const handleSearch = useCallback((text: string) => {
-    setSearchQuery(text);
-  }, []);
+  const handleSearchKeyPress = useCallback((e: any) => {
+    if (e.nativeEvent.key === 'Enter') {
+      handleSearchSubmit();
+    }
+  }, [handleSearchSubmit]);
 
   const activeFilterCount =
     filters.industries.length +
@@ -156,126 +207,6 @@ export default function FundingScreen() {
     }
     return 'Funding Portal';
   };
-
-  // Header component for FlatList
-  const renderHeader = () => (
-    <View style={styles.headerContent}>
-      <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
-        <View style={styles.heroHeader}>
-          <View style={styles.heroText}>
-            <Text style={styles.heroTitle}>Funding Portal</Text>
-            <Text style={styles.heroSubtitle}>{getSubtitle()}</Text>
-          </View>
-          <TouchableOpacity style={styles.refreshButton} onPress={refresh}>
-            <RefreshCw size={18} color={COLORS.background} strokeWidth={2} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue} numberOfLines={1}>{allOpportunities.length}</Text>
-            <Text style={styles.statLabel} numberOfLines={1}>
-              {isFounder ? 'Requests' : 'Total Deals'}
-            </Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue} numberOfLines={1}>{activeDeals}</Text>
-            <Text style={styles.statLabel} numberOfLines={1}>Active</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue} numberOfLines={1}>{formatCurrency(totalRaised)}</Text>
-            <Text style={styles.statLabel} numberOfLines={1}>Total Raised</Text>
-          </View>
-        </View>
-      </LinearGradient>
-
-      {isFounder && (
-        <TouchableOpacity
-          style={styles.createRequestButton}
-          onPress={() => {
-            if (!user?.id) {
-              console.warn('User not authenticated, cannot create funding request');
-              return;
-            }
-            console.log('Create Funding Request button clicked');
-            setCreateRequestModalVisible(true);
-          }}
-          activeOpacity={0.7}>
-          <Plus size={20} color={COLORS.background} strokeWidth={2.5} />
-          <Text style={styles.createRequestButtonText}>Create Funding Request</Text>
-        </TouchableOpacity>
-      )}
-
-      <View style={styles.controls}>
-        <View style={styles.searchContainer}>
-          <Search size={20} color={COLORS.textSecondary} strokeWidth={2} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={isFounder ? "Search your requests..." : "Search companies, industries..."}
-            placeholderTextColor={COLORS.textSecondary}
-            value={searchQuery}
-            onChangeText={handleSearch}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-            clearButtonMode="while-editing"
-          />
-        </View>
-
-        <View style={styles.actionButtons}>
-          {!isFounder && (
-            <TouchableOpacity
-              style={styles.filterButton}
-              onPress={() => setFilterModalVisible(true)}
-              activeOpacity={0.7}>
-              <Filter size={18} color={COLORS.primary} strokeWidth={2} />
-              {activeFilterCount > 0 && (
-                <View style={styles.filterBadge}>
-                  <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          )}
-
-          {!isFounder && (
-            <View style={styles.viewToggle}>
-              <TouchableOpacity
-                style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonActive]}
-                onPress={() => setViewMode('grid')}
-                activeOpacity={0.7}>
-                <Grid3x3
-                  size={18}
-                  color={viewMode === 'grid' ? COLORS.background : COLORS.textSecondary}
-                  strokeWidth={2}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.viewButton, viewMode === 'table' && styles.viewButtonActive]}
-                onPress={() => setViewMode('table')}
-                activeOpacity={0.7}>
-                <List
-                  size={18}
-                  color={viewMode === 'table' ? COLORS.background : COLORS.textSecondary}
-                  strokeWidth={2}
-                />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {activeFilterCount > 0 && (
-        <View style={styles.activeFilters}>
-          <Text style={styles.activeFiltersText}>
-            {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} applied
-          </Text>
-          <TouchableOpacity onPress={resetFilters}>
-            <Text style={styles.clearFiltersText}>Clear All</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
 
   // Empty state component
   const renderEmptyState = () => (
@@ -309,20 +240,129 @@ export default function FundingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Fixed Header with Hero Stats and Search - Outside FlatList */}
+      <View style={styles.fixedHeader}>
+        <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
+          <View style={styles.heroHeader}>
+            <View style={styles.heroText}>
+              <Text style={styles.heroTitle}>Funding Portal</Text>
+              <Text style={styles.heroSubtitle}>{getSubtitle()}</Text>
+            </View>
+            <TouchableOpacity style={styles.refreshButton} onPress={refresh}>
+              <RefreshCw size={18} color={COLORS.background} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue} numberOfLines={1}>{allOpportunities.length}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>
+                {isFounder ? 'Requests' : 'Total Deals'}
+              </Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue} numberOfLines={1}>{activeDeals}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Active</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue} numberOfLines={1}>{formatCurrency(totalRaised)}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Total Raised</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        {isFounder && (
+          <TouchableOpacity
+            style={styles.createRequestButton}
+            onPress={() => {
+              if (!user?.id) {
+                console.warn('User not authenticated, cannot create funding request');
+                return;
+              }
+              console.log('Create Funding Request button clicked');
+              setCreateRequestModalVisible(true);
+            }}
+            activeOpacity={0.7}>
+            <Plus size={20} color={COLORS.background} strokeWidth={2.5} />
+            <Text style={styles.createRequestButtonText}>Create Funding Request</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.controls}>
+          <SearchInput
+            value={searchInput}
+            onChangeText={setSearchInput}
+            onSubmit={handleSearchSubmit}
+            onKeyPress={handleSearchKeyPress}
+            placeholder={isFounder ? "Search your requests..." : "Search companies, industries..."}
+            showSearchButton={searchInput.length > 0 && searchInput !== appliedSearch}
+            onSearchPress={handleSearchSubmit}
+          />
+
+          <View style={styles.actionButtons}>
+            {!isFounder && (
+              <TouchableOpacity
+                style={styles.filterButton}
+                onPress={() => setFilterModalVisible(true)}
+                activeOpacity={0.7}>
+                <Filter size={18} color={COLORS.primary} strokeWidth={2} />
+                {activeFilterCount > 0 && (
+                  <View style={styles.filterBadge}>
+                    <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {!isFounder && (
+              <View style={styles.viewToggle}>
+                <TouchableOpacity
+                  style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonActive]}
+                  onPress={() => setViewMode('grid')}
+                  activeOpacity={0.7}>
+                  <Grid3x3
+                    size={18}
+                    color={viewMode === 'grid' ? COLORS.background : COLORS.textSecondary}
+                    strokeWidth={2}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.viewButton, viewMode === 'table' && styles.viewButtonActive]}
+                  onPress={() => setViewMode('table')}
+                  activeOpacity={0.7}>
+                  <List
+                    size={18}
+                    color={viewMode === 'table' ? COLORS.background : COLORS.textSecondary}
+                    strokeWidth={2}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {activeFilterCount > 0 && (
+          <View style={styles.activeFilters}>
+            <Text style={styles.activeFiltersText}>
+              {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} applied
+            </Text>
+            <TouchableOpacity onPress={resetFilters}>
+              <Text style={styles.clearFiltersText}>Clear All</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      {/* Content Area - Now independent of header */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Loading opportunities...</Text>
         </View>
       ) : opportunities.length === 0 ? (
-        <FlatList
-          data={[]}
-          renderItem={() => null}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={styles.emptyListContent}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={styles.contentArea}>
+          {renderEmptyState()}
+        </View>
       ) : viewMode === 'grid' || isFounder ? (
         <FlatList
           data={opportunities}
@@ -333,19 +373,15 @@ export default function FundingScreen() {
             />
           )}
           keyExtractor={(item) => item.id}
-          ListHeaderComponent={renderHeader}
           contentContainerStyle={styles.gridContent}
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <View style={styles.tableWrapper}>
-          {renderHeader()}
-          <View style={styles.tableContainer}>
-            <OpportunityTable
-              opportunities={opportunities}
-              onPress={(opportunity) => setSelectedOpportunity(opportunity)}
-            />
-          </View>
+        <View style={styles.tableContainer}>
+          <OpportunityTable
+            opportunities={opportunities}
+            onPress={(opportunity) => setSelectedOpportunity(opportunity)}
+          />
         </View>
       )}
 
@@ -469,6 +505,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  fixedHeader: {
+    backgroundColor: COLORS.background,
+  },
+  contentArea: {
+    flex: 1,
+  },
   headerContent: {
     padding: SPACING.lg,
     gap: SPACING.lg,
@@ -566,6 +608,21 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     paddingVertical: 0,
     margin: 0,
+    ...(Platform.OS === 'web' && {
+      outlineStyle: 'none',
+    }),
+  },
+  searchButton: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.sm,
+    marginLeft: SPACING.sm,
+  },
+  searchButtonText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.background,
   },
   actionButtons: {
     flexDirection: 'row',

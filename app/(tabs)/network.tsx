@@ -9,11 +9,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { EmptyState } from '@/components/EmptyState';
-import { LoadingScreen } from '@/components/LoadingScreen';
 import { FounderProfileCard } from '@/components/network/FounderProfileCard';
 import { InvestorProfileCard } from '@/components/network/InvestorProfileCard';
 import { Picker } from '@/components/Picker';
@@ -50,7 +50,9 @@ const ROLES = [
 export default function NetworkScreen() {
   const router = useRouter();
   const { user, profile } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
+  // Separate states for input and applied search
+  const [searchInput, setSearchInput] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [industryFilter, setIndustryFilter] = useState('');
   const [stageFilter, setStageFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
@@ -65,7 +67,7 @@ export default function NetworkScreen() {
     error: networkError,
     refetch,
   } = useExploreNetwork({
-    search: searchQuery,
+    search: appliedSearch,
     industry: industryFilter,
     stage: stageFilter,
     location: locationFilter,
@@ -81,7 +83,7 @@ export default function NetworkScreen() {
     : profiles;
 
   const hasActiveFilters = !!(
-    searchQuery ||
+    appliedSearch ||
     industryFilter ||
     stageFilter ||
     locationFilter ||
@@ -89,11 +91,22 @@ export default function NetworkScreen() {
   );
 
   const clearAllFilters = () => {
-    setSearchQuery('');
+    setSearchInput('');
+    setAppliedSearch('');
     setIndustryFilter('');
     setStageFilter('');
     setLocationFilter('');
     setRoleFilter('');
+  };
+
+  const handleSearchSubmit = () => {
+    setAppliedSearch(searchInput);
+  };
+
+  const handleSearchKeyPress = (e: any) => {
+    if (e.nativeEvent.key === 'Enter') {
+      handleSearchSubmit();
+    }
   };
 
   const handleChat = async (targetId: string, targetName: string) => {
@@ -165,10 +178,6 @@ export default function NetworkScreen() {
     }
   };
 
-  if (networkLoading) {
-    return <LoadingScreen />;
-  }
-
   if (networkError) {
     return (
       <SafeAreaView style={styles.container}>
@@ -188,12 +197,21 @@ export default function NetworkScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {networkLoading && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      )}
       <LinearGradient colors={GRADIENTS.primary} style={styles.header}>
         <Text style={styles.headerTitle}>Explore Network</Text>
         <Text style={styles.headerSubtitle}>
-          {showFounders && !profile?.role && 'Discover innovative startups and founders'}
-          {showInvestors && !showFounders && !profile?.role && 'Connect with investors'}
-          {profile?.role === 'expert' && 'Discover innovative startups and founders • Connect with founders and investors'}
+          {profile?.role === 'expert' 
+            ? 'Discover innovative startups and founders • Connect with founders and investors'
+            : showFounders 
+              ? 'Discover innovative startups and founders'
+              : showInvestors 
+                ? 'Connect with investors' 
+                : 'Connect with the startup ecosystem'}
         </Text>
       </LinearGradient>
 
@@ -204,18 +222,33 @@ export default function NetworkScreen() {
             style={styles.searchInput}
             placeholder="Search by name, company, or industry"
             placeholderTextColor={COLORS.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+            value={searchInput}
+            onChangeText={setSearchInput}
+            onSubmitEditing={handleSearchSubmit}
+            onKeyPress={handleSearchKeyPress}
+            returnKeyType="search"
             autoCapitalize="none"
             autoCorrect={false}
           />
-          {searchQuery.length > 0 && (
+          {searchInput.length > 0 && (
             <TouchableOpacity
-              onPress={() => setSearchQuery('')}
+              onPress={() => {
+                setSearchInput('');
+                setAppliedSearch('');
+              }}
               style={styles.clearButton}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <X size={18} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          )}
+          {searchInput.length > 0 && searchInput !== appliedSearch && (
+            <TouchableOpacity
+              onPress={handleSearchSubmit}
+              style={styles.searchButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.searchButtonText}>Search</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -290,10 +323,13 @@ export default function NetworkScreen() {
       {hasActiveFilters && (
         <View style={styles.activeFiltersContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeFiltersContent}>
-            {searchQuery && (
+            {appliedSearch && (
               <View style={styles.activeFilterChip}>
-                <Text style={styles.activeFilterText}>Search: {searchQuery}</Text>
-                <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.removeFilterButton}>
+                <Text style={styles.activeFilterText}>Search: {appliedSearch}</Text>
+                <TouchableOpacity onPress={() => {
+                  setSearchInput('');
+                  setAppliedSearch('');
+                }} style={styles.removeFilterButton}>
                   <X size={14} color={COLORS.textSecondary} />
                 </TouchableOpacity>
               </View>
@@ -473,10 +509,25 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text,
+    ...(Platform.OS === 'web' && {
+      outlineStyle: 'none',
+    }),
   },
   clearButton: {
     padding: SPACING.xs,
     marginLeft: SPACING.xs,
+  },
+  searchButton: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.sm,
+    marginLeft: SPACING.sm,
+  },
+  searchButtonText: {
+    fontSize: FONT_SIZES.sm,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.background,
   },
   filterToggleButton: {
     width: 48,
@@ -525,6 +576,17 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: COLORS.background,
     fontFamily: FONT_FAMILY.bodyBold,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
   filtersContainer: {
     backgroundColor: COLORS.surfaceMuted,
@@ -580,6 +642,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     minHeight: 56,
+    ...(Platform.OS === 'web' && {
+      outlineStyle: 'none',
+    }),
   },
   activeFiltersContainer: {
     backgroundColor: COLORS.surfaceMuted,
