@@ -1,14 +1,13 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
-  TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Logo } from '@/components/Logo';
+import { useLocalSearchParams } from 'expo-router';
 import {
   BORDER_RADIUS,
   COLORS,
@@ -20,80 +19,48 @@ import {
   TYPOGRAPHY,
 } from '@/constants/theme';
 import { Mail, CheckCircle } from 'lucide-react-native';
-import { Button } from '@/components/Button';
 
 export default function CheckEmailScreen() {
   const params = useLocalSearchParams();
   const email = params.email as string;
 
-  const handleGoToLogin = () => {
-    router.replace('/(auth)/login');
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={GRADIENTS.navy} style={StyleSheet.absoluteFill} />
-      <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <Logo size={80} variant="icon" />
-        </View>
-
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
         <View style={styles.card}>
-          <View style={styles.iconContainer}>
+          <View style={styles.iconWrapper}>
             <View style={styles.iconCircle}>
-              <Mail size={48} color={COLORS.primary} strokeWidth={2} />
+              <Mail size={32} color={COLORS.primary} strokeWidth={2.5} />
+            </View>
+            <View style={styles.checkBadge}>
+              <CheckCircle size={18} color={COLORS.success} fill={COLORS.success} strokeWidth={2.5} />
             </View>
           </View>
 
-          <Text style={styles.title}>Check Your Email</Text>
-          <Text style={styles.subtitle}>
-            We've sent a verification link to
-          </Text>
+          <Text style={styles.title}>Email Sent</Text>
           
           {email && (
-            <Text style={styles.emailText}>{email}</Text>
+            <View style={styles.emailContainer}>
+              <Text style={styles.emailLabel}>Sent to:</Text>
+              <Text style={styles.emailText}>{email}</Text>
+            </View>
           )}
 
-          <View style={styles.infoBox}>
-            <View style={styles.infoRow}>
-              <CheckCircle size={20} color={COLORS.success} strokeWidth={2} />
-              <Text style={styles.infoText}>
-                Click the link in the email to verify your account
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <CheckCircle size={20} color={COLORS.success} strokeWidth={2} />
-              <Text style={styles.infoText}>
-                Check your spam folder if you don't see it
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <CheckCircle size={20} color={COLORS.success} strokeWidth={2} />
-              <Text style={styles.infoText}>
-                The link will expire in 24 hours
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.noteBox}>
-            <Text style={styles.noteText}>
-              After verifying your email, you'll be able to sign in to your NextIgnition account.
+          <View style={styles.messageContainer}>
+            <Text style={styles.messageText}>
+              Please check your email and click the verification link to complete your registration.
+            </Text>
+            <Text style={styles.subMessageText}>
+              After verification, you'll be able to login to your account.
             </Text>
           </View>
-
-          <Button
-            title="Go to Login"
-            onPress={handleGoToLogin}
-            style={styles.loginButton}
-          />
-
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}>
-            <Text style={styles.backButtonText}>Back to Registration</Text>
-          </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -103,115 +70,95 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.xl,
-    gap: SPACING.xl,
-  },
-  logoContainer: {
-    marginBottom: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.xl,
+    minHeight: '100%',
   },
   card: {
-    width: '100%',
-    maxWidth: 520,
-    backgroundColor: COLORS.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.xxl,
     alignItems: 'center',
-    gap: SPACING.lg,
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
     ...SHADOWS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  iconContainer: {
-    marginBottom: SPACING.sm,
+  iconWrapper: {
+    position: 'relative',
+    marginBottom: SPACING.xl,
   },
   iconCircle: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primaryLight + '20',
+    backgroundColor: COLORS.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: COLORS.primaryLight,
+    borderColor: COLORS.primary,
+  },
+  checkBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BORDER_RADIUS.full,
+    padding: 2,
+    ...SHADOWS.sm,
   },
   title: {
-    ...TYPOGRAPHY.display,
+    ...TYPOGRAPHY.heading,
     fontFamily: FONT_FAMILY.displayBold,
     color: COLORS.text,
     textAlign: 'center',
+    marginBottom: SPACING.lg,
     fontSize: FONT_SIZES.xxl,
-    marginBottom: SPACING.xs,
   },
-  subtitle: {
-    ...TYPOGRAPHY.body,
+  emailContainer: {
+    width: '100%',
+    backgroundColor: COLORS.surfaceMuted,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.xl,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  emailLabel: {
+    ...TYPOGRAPHY.caption,
     color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    fontSize: FONT_SIZES.md,
     marginBottom: SPACING.xs,
+    fontSize: FONT_SIZES.sm,
   },
   emailText: {
     ...TYPOGRAPHY.bodyStrong,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.primary,
-    textAlign: 'center',
     fontSize: FONT_SIZES.md,
-    marginBottom: SPACING.lg,
+    lineHeight: 22,
   },
-  infoBox: {
+  messageContainer: {
     width: '100%',
-    backgroundColor: COLORS.successLight + '20',
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.md,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.success,
-    gap: SPACING.md,
-    marginTop: SPACING.sm,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     gap: SPACING.sm,
   },
-  infoText: {
+  messageText: {
     ...TYPOGRAPHY.body,
     color: COLORS.text,
-    fontSize: FONT_SIZES.sm,
-    lineHeight: 20,
-    flex: 1,
-  },
-  noteBox: {
-    width: '100%',
-    backgroundColor: COLORS.primaryLight + '15',
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary,
-    marginTop: SPACING.sm,
-  },
-  noteText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.text,
-    fontSize: FONT_SIZES.sm,
-    lineHeight: 20,
     textAlign: 'center',
+    fontSize: FONT_SIZES.md,
+    lineHeight: 24,
   },
-  loginButton: {
-    width: '100%',
-    marginTop: SPACING.md,
-  },
-  backButton: {
-    marginTop: SPACING.sm,
-    paddingVertical: SPACING.sm,
-  },
-  backButtonText: {
-    ...TYPOGRAPHY.bodyStrong,
-    color: COLORS.primary,
-    fontFamily: FONT_FAMILY.bodyBold,
+  subMessageText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
     fontSize: FONT_SIZES.sm,
+    lineHeight: 20,
+    marginTop: SPACING.xs,
   },
 });
