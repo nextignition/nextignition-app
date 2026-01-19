@@ -79,9 +79,6 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: SPACING.md,
     width: '100%',
-    // On web/desktop we keep a comfortable max width so inputs don't stretch edge to edge
-    maxWidth: 640,
-    alignSelf: 'center',
   },
   label: {
     ...TYPOGRAPHY.label,

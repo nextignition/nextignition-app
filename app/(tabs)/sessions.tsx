@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Linking,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -551,6 +552,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.md,
+    ...(Platform.OS === 'web' && {
+      flex: 0,
+      maxWidth: 200,
+      alignSelf: 'center',
+      minWidth: 150,
+    }),
   },
   messageButtonText: {
     ...TYPOGRAPHY.bodyStrong,
@@ -566,6 +573,12 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.md,
+    ...(Platform.OS === 'web' && {
+      flex: 0,
+      maxWidth: 200,
+      alignSelf: 'center',
+      minWidth: 150,
+    }),
   },
   rescheduleButtonText: {
     ...TYPOGRAPHY.bodyStrong,
@@ -581,6 +594,12 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.md,
+    ...(Platform.OS === 'web' && {
+      flex: 0,
+      maxWidth: 300,
+      alignSelf: 'center',
+      minWidth: 200,
+    }),
   },
   joinButtonText: {
     ...TYPOGRAPHY.bodyStrong,

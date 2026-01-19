@@ -11,4 +11,20 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
+# Expo AV (Video player)
+-keep class expo.modules.av.** { *; }
+-keep class expo.modules.av.video.** { *; }
+
+# Keep React Native classes
+-keep class com.facebook.react.** { *; }
+-keep class com.facebook.hermes.** { *; }
+
+# Keep native modules
+-keep class expo.modules.** { *; }
+
+# Keep JavaScript interface
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
 # Add any project specific keep options here:

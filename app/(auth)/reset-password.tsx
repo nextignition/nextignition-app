@@ -653,6 +653,10 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginBottom: SPACING.lg,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 400,
+      alignSelf: 'center',
+    }),
   },
   footer: {
     flexDirection: 'row',

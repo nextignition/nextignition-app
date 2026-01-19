@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -459,96 +460,97 @@ export default function FounderDashboard() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Funding Portal</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/funding')}>
-              <Text style={styles.seeAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          {fundingRequests.length === 0 ? (
-            <View style={styles.fundingCard}>
-              <View style={styles.fundingHeader}>
-                <TrendingUp size={24} color={COLORS.primary} strokeWidth={2} />
-                <View style={styles.fundingInfo}>
-                  <Text style={styles.fundingTitle}>No Funding Requests Yet</Text>
-                  <Text style={styles.fundingSubtitle}>Create your first funding request to get started</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.fundingButton}
-                onPress={() => router.push('/(tabs)/funding')}>
-                <Text style={styles.fundingButtonText}>Create Request</Text>
+        <View style={styles.bottomSection}>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Funding Portal</Text>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/funding')}>
+                <Text style={styles.seeAllText}>View All</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            fundingRequests.slice(0, 1).map((request) => (
-              <View key={request.id} style={styles.fundingCard}>
+            {fundingRequests.length === 0 ? (
+              <View style={styles.fundingCard}>
                 <View style={styles.fundingHeader}>
                   <TrendingUp size={24} color={COLORS.primary} strokeWidth={2} />
                   <View style={styles.fundingInfo}>
-                    <Text style={styles.fundingTitle}>
-                      {request.title || 'Funding Request'}
-                    </Text>
-                    <Text style={styles.fundingSubtitle}>
-                      {request.amount_requested 
-                        ? `$${request.amount_requested.toLocaleString()}` 
-                        : 'Amount not specified'} • {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                    </Text>
-                    <Text style={styles.fundingStats}>
-                      {request.interestedCount} interested • {request.investorsViewed} views
-                    </Text>
+                    <Text style={styles.fundingTitle}>No Funding Requests Yet</Text>
+                    <Text style={styles.fundingSubtitle}>Create your first funding request to get started</Text>
                   </View>
                 </View>
                 <TouchableOpacity
                   style={styles.fundingButton}
-                  onPress={() => router.push('/(tabs)/funding-status')}>
-                  <Text style={styles.fundingButtonText}>View Details</Text>
+                  onPress={() => router.push('/(tabs)/funding')}>
+                  <Text style={styles.fundingButtonText}>Create Request</Text>
                 </TouchableOpacity>
               </View>
-            ))
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/sessions')}>
-              <Text style={styles.seeAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          {allUpcomingSessions.length === 0 ? (
-            <View style={styles.sessionCard}>
-              <Calendar size={20} color={COLORS.textSecondary} strokeWidth={2} />
-              <View style={styles.sessionInfo}>
-                <Text style={styles.sessionTitle}>No sessions scheduled</Text>
-                <Text style={styles.sessionTime}>Schedule a meeting or request mentorship</Text>
-              </View>
-            </View>
-          ) : (
-            allUpcomingSessions.map((session) => (
-              <View key={session.id} style={styles.sessionCard}>
-                <Calendar size={20} color={COLORS.primary} strokeWidth={2} />
-                <View style={styles.sessionInfo}>
-                  <Text style={styles.sessionTitle}>{session.title}</Text>
-                  <Text style={styles.sessionTime}>
-                    {session.date.toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })} • {session.participant}
-                  </Text>
+            ) : (
+              fundingRequests.slice(0, 1).map((request) => (
+                <View key={request.id} style={styles.fundingCard}>
+                  <View style={styles.fundingHeader}>
+                    <TrendingUp size={24} color={COLORS.primary} strokeWidth={2} />
+                    <View style={styles.fundingInfo}>
+                      <Text style={styles.fundingTitle}>
+                        {request.title || 'Funding Request'}
+                      </Text>
+                      <Text style={styles.fundingSubtitle}>
+                        {request.amount_requested 
+                          ? `$${request.amount_requested.toLocaleString()}` 
+                          : 'Amount not specified'} • {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                      </Text>
+                      <Text style={styles.fundingStats}>
+                        {request.interestedCount} interested • {request.investorsViewed} views
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.fundingButton}
+                    onPress={() => router.push('/(tabs)/funding-status')}>
+                    <Text style={styles.fundingButtonText}>View Details</Text>
+                  </TouchableOpacity>
                 </View>
-                <CheckCircle
-                  size={20}
-                  color={COLORS.primary}
-                  strokeWidth={2}
-                />
-              </View>
-            ))
-          )}
+              ))
+            )}
+          </View>
 
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/sessions')}>
+                <Text style={styles.seeAllText}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            {allUpcomingSessions.length === 0 ? (
+              <View style={styles.sessionCard}>
+                <Calendar size={20} color={COLORS.textSecondary} strokeWidth={2} />
+                <View style={styles.sessionInfo}>
+                  <Text style={styles.sessionTitle}>No sessions scheduled</Text>
+                  <Text style={styles.sessionTime}>Schedule a meeting or request mentorship</Text>
+                </View>
+              </View>
+            ) : (
+              allUpcomingSessions.map((session) => (
+                <View key={session.id} style={styles.sessionCard}>
+                  <Calendar size={20} color={COLORS.primary} strokeWidth={2} />
+                  <View style={styles.sessionInfo}>
+                    <Text style={styles.sessionTitle}>{session.title}</Text>
+                    <Text style={styles.sessionTime}>
+                      {session.date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })} • {session.participant}
+                    </Text>
+                  </View>
+                  <CheckCircle
+                    size={20}
+                    color={COLORS.primary}
+                    strokeWidth={2}
+                  />
+                </View>
+              ))
+            )}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -564,6 +566,12 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     paddingBottom: SPACING.xxl,
     gap: SPACING.xl,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 1280,
+      alignSelf: 'center',
+      width: '100%',
+      paddingHorizontal: SPACING.xxl,
+    }),
   },
   heroCard: {
     borderRadius: BORDER_RADIUS.xl,
@@ -600,6 +608,10 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'column',
     gap: SPACING.sm,
+    ...(Platform.OS === 'web' && {
+      flexDirection: 'row',
+      gap: SPACING.md,
+    }),
   },
   statCard: {
     width: '100%',
@@ -610,12 +622,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'flex-start',
+    ...(Platform.OS === 'web' && {
+      flex: 1,
+      width: 'auto',
+      alignItems: 'center',
+      padding: SPACING.lg,
+    }),
   },
   statValue: {
     fontFamily: FONT_FAMILY.displayMedium,
     fontSize: FONT_SIZES.xl,
     color: COLORS.background,
     marginBottom: SPACING.xs / 2,
+    ...(Platform.OS === 'web' && {
+      fontSize: FONT_SIZES.xxl,
+    }),
   },
   statLabel: {
     ...TYPOGRAPHY.caption,
@@ -624,6 +645,17 @@ const styles = StyleSheet.create({
   section: {
     gap: SPACING.md,
     marginBottom: SPACING.lg,
+    ...(Platform.OS === 'web' && {
+      flex: 1,
+      marginBottom: 0,
+    }),
+  },
+  bottomSection: {
+    ...(Platform.OS === 'web' && {
+      flexDirection: 'row',
+      gap: SPACING.xl,
+      alignItems: 'flex-start',
+    }),
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -645,6 +677,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginHorizontal: 0,
+    ...(Platform.OS === 'web' && {
+      justifyContent: 'center',
+      gap: SPACING.md,
+      alignItems: 'center',
+    }),
   },
   actionCard: {
     width: '48%',
@@ -657,6 +694,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
     marginBottom: SPACING.md,
+    ...(Platform.OS === 'web' && {
+      width: 'auto',
+      flex: '0 0 calc(33.333% - 16px)',
+      minWidth: 220,
+      maxWidth: 280,
+      marginBottom: 0,
+    }),
   },
   actionIcon: {
     width: 56,
@@ -721,6 +765,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     ...SHADOWS.sm,
     gap: SPACING.md,
+    ...(Platform.OS === 'web' && {
+      padding: SPACING.xl,
+    }),
   },
   fundingHeader: {
     flexDirection: 'row',
@@ -748,9 +795,16 @@ const styles = StyleSheet.create({
   },
   fundingButton: {
     paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 280,
+      alignSelf: 'center',
+      width: 'auto',
+      minWidth: 200,
+    }),
   },
   fundingButtonText: {
     ...TYPOGRAPHY.bodyStrong,
@@ -767,6 +821,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.xs,
+    ...(Platform.OS === 'web' && {
+      padding: SPACING.xl,
+    }),
   },
   sessionInfo: {
     flex: 1,
@@ -786,6 +843,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginHorizontal: 0,
+    ...(Platform.OS === 'web' && {
+      justifyContent: 'center',
+      gap: SPACING.md,
+      alignItems: 'center',
+    }),
   },
   featureCard: {
     width: '48%',
@@ -798,6 +860,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
     marginBottom: SPACING.md,
+    ...(Platform.OS === 'web' && {
+      width: 'auto',
+      flex: '0 0 calc(33.333% - 16px)',
+      minWidth: 220,
+      maxWidth: 280,
+      marginBottom: 0,
+    }),
   },
   featureTitle: {
     ...TYPOGRAPHY.bodyStrong,

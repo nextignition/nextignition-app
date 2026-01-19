@@ -514,6 +514,11 @@ const styles = StyleSheet.create({
   headerContent: {
     padding: SPACING.lg,
     gap: SPACING.lg,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 1200,
+      alignSelf: 'center',
+      width: '100%',
+    }),
   },
   emptyListContent: {
     flexGrow: 1,
@@ -597,6 +602,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     height: 52,
     gap: SPACING.sm,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600,
+      alignSelf: 'center',
+      width: '100%',
+    }),
     borderWidth: 1,
     borderColor: COLORS.primaryLight + '60',
     ...SHADOWS.sm,

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -905,6 +906,11 @@ const styles = StyleSheet.create({
   },
   messageButton: {
     width: '100%',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 200,
+      alignSelf: 'center',
+      width: 'auto',
+    }),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -921,10 +927,14 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
   },
   requestButton: {
-    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 300,
+      alignSelf: 'center',
+      width: 'auto',
+    }),
     gap: SPACING.xs,
     paddingVertical: SPACING.md,
     backgroundColor: COLORS.primary,
@@ -1121,6 +1131,11 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 300,
+      alignSelf: 'center',
+      width: 'auto',
+    }),
   },
   joinButtonText: {
     ...TYPOGRAPHY.bodyStrong,

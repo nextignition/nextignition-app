@@ -43,19 +43,34 @@ export function Button({
   const isGradientVariant = variant === 'primary' || variant === 'secondary';
   const gradientColors = variant === 'secondary' ? GRADIENTS.accent : GRADIENTS.primary;
 
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.base,
-        styles[variant],
-        isGradientVariant && styles.gradientBase,
-        pressed && styles.pressed,
-        isDisabled && styles.disabled,
-        Platform.OS === 'web' && styles.buttonWeb,
+  // Merge styles ensuring web constraints override width properties
+  const getButtonStyle = (pressed: boolean) => {
+    const baseStyles = [
+      styles.base,
+      styles[variant],
+      isGradientVariant && styles.gradientBase,
+      pressed && styles.pressed,
+      isDisabled && styles.disabled,
+    ];
+    
+    if (Platform.OS === 'web') {
+      // On web, apply custom style first, then override with web constraints
+      return [
+        ...baseStyles,
         style,
-      ]}>
+        styles.buttonWeb, // Web constraints applied last to override width
+      ];
+    }
+    
+    return [...baseStyles, style];
+  };
+
+  return (
+    <View style={Platform.OS === 'web' ? styles.buttonWrapper : undefined}>
+      <Pressable
+        onPress={onPress}
+        disabled={isDisabled}
+        style={({ pressed }) => getButtonStyle(pressed)}>
       <>
         {isGradientVariant && (
           <LinearGradient
@@ -76,6 +91,7 @@ export function Button({
         </View>
       </>
     </Pressable>
+    </View>
   );
 }
 
@@ -91,8 +107,15 @@ const styles = StyleSheet.create({
   gradientBase: {
     ...SHADOWS.sm,
   },
+  buttonWrapper: {
+    alignItems: 'center',
+    width: '100%',
+  },
   buttonWeb: {
     cursor: 'pointer',
+    maxWidth: 400,
+    minWidth: 120,
+    width: 'auto',
   },
   primary: {
     backgroundColor: COLORS.primary,

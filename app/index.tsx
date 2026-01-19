@@ -83,9 +83,10 @@ export default function Index() {
     // Also check if we're on root path with verification params (fallback)
     // Sometimes Supabase redirects to root with params in the URL
     if (pathname === '/' || pathname === '' || !pathname) {
-      const urlParams = new URLSearchParams(
-        typeof window !== 'undefined' ? window.location.search : ''
-      );
+      const searchString = typeof window !== 'undefined' && window.location?.search 
+        ? window.location.search 
+        : '';
+      const urlParams = new URLSearchParams(searchString);
       const urlType = urlParams.get('type');
       const urlToken = urlParams.get('token') || urlParams.get('access_token');
       
@@ -112,9 +113,10 @@ export default function Index() {
     
     // Also check if we're on root path with recovery params (fallback)
     if (pathname === '/' || pathname === '' || !pathname) {
-      const urlParams = new URLSearchParams(
-        typeof window !== 'undefined' ? window.location.search : ''
-      );
+      const searchString = typeof window !== 'undefined' && window.location?.search 
+        ? window.location.search 
+        : '';
+      const urlParams = new URLSearchParams(searchString);
       const urlType = urlParams.get('type');
       const urlToken = urlParams.get('token') || urlParams.get('access_token');
       

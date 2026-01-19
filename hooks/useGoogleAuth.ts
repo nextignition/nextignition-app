@@ -123,7 +123,7 @@ export function useGoogleAuth() {
       // CRITICAL: The redirect URI MUST EXACTLY match what's configured in Google Cloud Console
       let redirectUri = '';
       if (Platform.OS === 'web') {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && window.location?.origin) {
           // Use the exact current origin + /google-callback path
           redirectUri = `${window.location.origin}/google-callback`;
           console.log('🌐 Web Platform Detected');

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -201,8 +202,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loginButton: {
-    width: '100%',
     marginTop: SPACING.md,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 400,
+      alignSelf: 'center',
+      width: 'auto',
+    }),
   },
   backButton: {
     marginTop: SPACING.sm,

@@ -50,33 +50,43 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   // Fallback: if video fails or takes too long, proceed after timeout
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!hasError) {
-        console.warn('Video timeout, proceeding to login...');
-        onFinish();
-      }
-    }, 8000); // 8 second maximum timeout
+      console.warn('Video timeout, proceeding to login...');
+      onFinish();
+    }, 5000); // 5 second maximum timeout (reduced from 8s)
 
     return () => clearTimeout(timeout);
-  }, [hasError, onFinish]);
+  }, [onFinish]);
 
   const handleLoad = () => {
-    // Video loaded, try to play it
-    if (videoRef.current && !videoStarted) {
-      setVideoStarted(true);
-      videoRef.current.playAsync().catch((error) => {
-        console.error('Video play error:', error);
-        setHasError(true);
-        // If video fails, proceed after a short delay
-        setTimeout(() => onFinish(), 1500);
-      });
+    try {
+      // Video loaded, try to play it
+      if (videoRef.current && !videoStarted) {
+        setVideoStarted(true);
+        videoRef.current.playAsync().catch((error) => {
+          console.error('Video play error:', error);
+          setHasError(true);
+          // If video fails, proceed after a short delay
+          setTimeout(() => onFinish(), 1500);
+        });
+      }
+    } catch (error) {
+      console.error('Splash screen load error:', error);
+      setHasError(true);
+      setTimeout(() => onFinish(), 1500);
     }
   };
 
   const handleError = (error: any) => {
-    console.error('Video error:', error);
-    setHasError(true);
-    // Proceed after short delay if video fails
-    setTimeout(() => onFinish(), 1500);
+    try {
+      console.error('Video error:', error);
+      setHasError(true);
+      // Proceed after short delay if video fails
+      setTimeout(() => onFinish(), 1500);
+    } catch (err) {
+      console.error('Error handler error:', err);
+      // Last resort - just proceed
+      onFinish();
+    }
   };
 
   if (!mounted) {
@@ -87,9 +97,19 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     );
   }
 
+  // If there's an error or video fails, show loading and proceed quickly
+  if (hasError) {
+    // Auto-proceed after showing loading briefly
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {!hasError && mounted ? (
+      {mounted ? (
         <Video
           ref={videoRef}
           source={require('@/assets/videos/LogoAnimation-NI.mp4')}
@@ -101,7 +121,11 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           onLoad={handleLoad}
           onError={handleError}
           onPlaybackStatusUpdate={(status) => {
-            setPlaybackStatus(status);
+            try {
+              setPlaybackStatus(status);
+            } catch (error) {
+              console.error('Playback status update error:', error);
+            }
           }}
         />
       ) : (

@@ -22,9 +22,10 @@ import { useNotification } from '@/hooks/useNotification';
 import { NotificationContainer } from '@/components/NotificationContainer';
 
 export default function EditProfileScreen() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { notifications, showSuccess, showError, dismissNotification } = useNotification();
   const [loading, setLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [fullName, setFullName] = useState('');
   const [location, setLocation] = useState('');
   const [bio, setBio] = useState('');
@@ -56,8 +57,9 @@ export default function EditProfileScreen() {
     expertiseAreas: '',
   });
 
+  // Only initialize form fields once when profile first loads
   useEffect(() => {
-    if (profile) {
+    if (profile && !isInitialized) {
       // Prefill all fields from profile (including onboarding data)
       setFullName(profile.full_name || '');
       setLocation(profile.location || '');
@@ -94,10 +96,17 @@ export default function EditProfileScreen() {
           ? profile.expertise_areas.join(', ') 
           : (profile.expertise_areas || ''),
       });
+      
+      setIsInitialized(true);
     }
-  }, [profile]);
+  }, [profile, isInitialized]);
 
   const handleSave = async () => {
+    // Prevent multiple simultaneous saves
+    if (loading) {
+      return;
+    }
+
     if (!fullName.trim()) {
       Alert.alert('Validation Error', 'Full name is required');
       return;
@@ -133,7 +142,7 @@ export default function EditProfileScreen() {
       };
 
       // Add role-specific fields
-      if (profile.role === 'founder') {
+      if (profile.role === 'founder' || profile.role === 'cofounder') {
         updateData.venture_name = founderValues.ventureName.trim() || null;
         updateData.venture_description = founderValues.ventureDescription.trim() || null;
         updateData.venture_industry = founderValues.ventureIndustry.trim() || null;
@@ -167,17 +176,23 @@ export default function EditProfileScreen() {
         .update(updateData)
         .eq('id', profile.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
+      // Refresh the profile in AuthContext
+      await refreshProfile();
 
       showSuccess('Profile updated successfully!');
+      
       // Navigate back after a short delay to show notification
       setTimeout(() => {
+        setLoading(false);
         router.back();
-      }, 1000);
+      }, 1500);
     } catch (error: any) {
-      showError(error.message || 'Failed to update profile. Please try again.');
       console.error('Save error:', error);
-    } finally {
+      showError(error.message || 'Failed to update profile. Please try again.');
       setLoading(false);
     }
   };

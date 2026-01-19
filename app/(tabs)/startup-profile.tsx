@@ -1148,6 +1148,10 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: SPACING.md,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 400,
+      alignSelf: 'center',
+    }),
   },
   loadingState: {
     justifyContent: 'center',

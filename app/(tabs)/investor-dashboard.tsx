@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -362,6 +363,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
+    ...(Platform.OS === 'web' && {
+      flex: 0,
+      maxWidth: 300,
+      alignSelf: 'center',
+      minWidth: 200,
+    }),
   },
   viewButtonText: {
     ...TYPOGRAPHY.bodyStrong,
@@ -379,6 +386,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.md,
+    ...(Platform.OS === 'web' && {
+      flex: 0,
+      maxWidth: 300,
+      alignSelf: 'center',
+      minWidth: 200,
+    }),
   },
   connectButtonText: {
     ...TYPOGRAPHY.bodyStrong,

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -495,6 +496,10 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.sm,
   },
   connectButton: {
+    ...(Platform.OS === 'web' && {
+      maxWidth: 300,
+      alignSelf: 'center',
+    }),
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs / 2,

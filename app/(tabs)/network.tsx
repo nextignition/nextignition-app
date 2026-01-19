@@ -490,6 +490,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     paddingBottom: SPACING.sm,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 1200,
+      alignSelf: 'center',
+      width: '100%',
+    }),
   },
   searchBar: {
     flex: 1,
@@ -497,6 +502,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.inputBackground,
     borderRadius: BORDER_RADIUS.md,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600,
+    }),
     paddingHorizontal: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,

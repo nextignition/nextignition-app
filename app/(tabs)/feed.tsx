@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -397,6 +398,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: SPACING.lg,
     gap: SPACING.xl,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 1200,
+      alignSelf: 'center',
+      width: '100%',
+    }),
   },
   heroCard: {
     borderRadius: BORDER_RADIUS.xl,
@@ -439,6 +445,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: BORDER_RADIUS.md,
     marginTop: SPACING.sm,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 300,
+      alignSelf: 'center',
+    }),
   },
   createButtonText: {
     ...TYPOGRAPHY.bodyStrong,
@@ -593,6 +603,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     paddingBottom: SPACING.sm,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 1200,
+      alignSelf: 'center',
+      width: '100%',
+    }),
   },
   searchBar: {
     flex: 1,

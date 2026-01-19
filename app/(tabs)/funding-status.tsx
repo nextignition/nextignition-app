@@ -8,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -594,6 +595,10 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   messageButton: {
+    ...(Platform.OS === 'web' && {
+      maxWidth: 200,
+      alignSelf: 'center',
+    }),
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs / 2,
@@ -611,6 +616,10 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
   },
   scheduleButton: {
+    ...(Platform.OS === 'web' && {
+      maxWidth: 200,
+      alignSelf: 'center',
+    }),
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs / 2,

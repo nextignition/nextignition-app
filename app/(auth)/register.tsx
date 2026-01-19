@@ -324,6 +324,10 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     marginBottom: SPACING.lg,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 400,
+      alignSelf: 'center',
+    }),
   },
   inputContainer: {
     marginBottom: SPACING.md,

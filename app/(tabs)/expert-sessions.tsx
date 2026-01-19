@@ -1031,6 +1031,11 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 300,
+      alignSelf: 'center',
+      width: 'auto',
+    }),
   },
   joinButtonText: {
     ...TYPOGRAPHY.bodyStrong,

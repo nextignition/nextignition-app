@@ -16,10 +16,16 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SplashScreen } from '@/components/SplashScreen';
 import { OnboardingOverlay } from '@/components/OnboardingOverlay';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { COLORS, FONT_FAMILY } from '@/constants/theme';
 
 export default function RootLayout() {
-  useFrameworkReady();
+  try {
+    useFrameworkReady();
+  } catch (error) {
+    console.error('Framework initialization error:', error);
+  }
+
   // Only show splash on mobile, skip on web
   const [showSplash, setShowSplash] = useState(Platform.OS !== 'web');
   const [fontsLoaded] = useFonts({
@@ -73,22 +79,24 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)/login" />
-        <Stack.Screen name="(auth)/register" />
-        <Stack.Screen name="(auth)/check-email" />
-        <Stack.Screen name="(auth)/check-email-reset" />
-        <Stack.Screen name="(auth)/reset-password" />
-        <Stack.Screen name="(auth)/email-verified" />
-        <Stack.Screen name="(auth)/role-selection" />
-        <Stack.Screen name="(auth)/onboarding" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="(admin)" />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <OnboardingOverlay />
-      <StatusBar style="auto" />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)/login" />
+          <Stack.Screen name="(auth)/register" />
+          <Stack.Screen name="(auth)/check-email" />
+          <Stack.Screen name="(auth)/check-email-reset" />
+          <Stack.Screen name="(auth)/reset-password" />
+          <Stack.Screen name="(auth)/email-verified" />
+          <Stack.Screen name="(auth)/role-selection" />
+          <Stack.Screen name="(auth)/onboarding" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(admin)" />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <OnboardingOverlay />
+        <StatusBar style="auto" />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

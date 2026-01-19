@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Platform } from 'react-native';
 import { Briefcase, MapPin, TrendingUp, MessageCircle, User, Building2, Video, Calendar } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONT_FAMILY, FONT_SIZES, TYPOGRAPHY } from '@/constants/theme';
 import { NetworkProfile, StartupProfile } from '@/hooks/useExploreNetwork';
@@ -303,6 +303,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     gap: SPACING.sm,
     ...SHADOWS.sm,
+    ...(Platform.OS === 'web' && {
+      flex: 0,
+      maxWidth: 150,
+      alignSelf: 'center',
+      minWidth: 120,
+    }),
   },
   chatButtonText: {
     fontSize: FONT_SIZES.md,

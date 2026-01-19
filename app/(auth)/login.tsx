@@ -514,6 +514,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loginButton: {
+    ...(Platform.OS === 'web' && {
+      maxWidth: 400,
+      alignSelf: 'center',
+    }),
     marginBottom: SPACING.lg,
   },
   inputContainer: {

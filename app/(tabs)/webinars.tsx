@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -319,6 +320,10 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   createButton: {
+    ...(Platform.OS === 'web' && {
+      maxWidth: 300,
+      alignSelf: 'center',
+    }),
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
@@ -414,6 +419,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 300,
+      alignSelf: 'center',
+    }),
   },
   joinButtonText: {
     ...TYPOGRAPHY.bodyStrong,
