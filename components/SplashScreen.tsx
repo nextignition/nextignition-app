@@ -50,8 +50,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   // Fallback: if video fails or takes too long, proceed after timeout
   useEffect(() => {
     const timeout = setTimeout(() => {
-      console.warn('Video timeout, proceeding to login...');
-      onFinish();
+        console.warn('Video timeout, proceeding to login...');
+        onFinish();
     }, 5000); // 5 second maximum timeout (reduced from 8s)
 
     return () => clearTimeout(timeout);
@@ -59,15 +59,15 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   const handleLoad = () => {
     try {
-      // Video loaded, try to play it
-      if (videoRef.current && !videoStarted) {
-        setVideoStarted(true);
-        videoRef.current.playAsync().catch((error) => {
-          console.error('Video play error:', error);
-          setHasError(true);
-          // If video fails, proceed after a short delay
-          setTimeout(() => onFinish(), 1500);
-        });
+    // Video loaded, try to play it
+    if (videoRef.current && !videoStarted) {
+      setVideoStarted(true);
+      videoRef.current.playAsync().catch((error) => {
+        console.error('Video play error:', error);
+        setHasError(true);
+        // If video fails, proceed after a short delay
+        setTimeout(() => onFinish(), 1500);
+      });
       }
     } catch (error) {
       console.error('Splash screen load error:', error);
@@ -78,10 +78,10 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   const handleError = (error: any) => {
     try {
-      console.error('Video error:', error);
-      setHasError(true);
-      // Proceed after short delay if video fails
-      setTimeout(() => onFinish(), 1500);
+    console.error('Video error:', error);
+    setHasError(true);
+    // Proceed after short delay if video fails
+    setTimeout(() => onFinish(), 1500);
     } catch (err) {
       console.error('Error handler error:', err);
       // Last resort - just proceed
@@ -122,7 +122,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           onError={handleError}
           onPlaybackStatusUpdate={(status) => {
             try {
-              setPlaybackStatus(status);
+            setPlaybackStatus(status);
             } catch (error) {
               console.error('Playback status update error:', error);
             }

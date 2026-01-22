@@ -47,14 +47,14 @@ export default function CheckEmailScreen() {
           {email && (
             <View style={styles.emailContainer}>
               <Text style={styles.emailLabel}>Sent to:</Text>
-              <Text style={styles.emailText}>{email}</Text>
+            <Text style={styles.emailText}>{email}</Text>
             </View>
           )}
 
           <View style={styles.messageContainer}>
             <Text style={styles.messageText}>
               Please check your email and click the verification link to complete your registration.
-            </Text>
+              </Text>
             <Text style={styles.subMessageText}>
               After verification, you'll be able to login to your account.
             </Text>

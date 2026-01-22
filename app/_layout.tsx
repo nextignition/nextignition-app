@@ -21,7 +21,7 @@ import { COLORS, FONT_FAMILY } from '@/constants/theme';
 
 export default function RootLayout() {
   try {
-    useFrameworkReady();
+  useFrameworkReady();
   } catch (error) {
     console.error('Framework initialization error:', error);
   }
@@ -80,23 +80,23 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)/login" />
-          <Stack.Screen name="(auth)/register" />
-          <Stack.Screen name="(auth)/check-email" />
-          <Stack.Screen name="(auth)/check-email-reset" />
-          <Stack.Screen name="(auth)/reset-password" />
-          <Stack.Screen name="(auth)/email-verified" />
-          <Stack.Screen name="(auth)/role-selection" />
-          <Stack.Screen name="(auth)/onboarding" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="(admin)" />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <OnboardingOverlay />
-        <StatusBar style="auto" />
-      </AuthProvider>
+    <AuthProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)/login" />
+        <Stack.Screen name="(auth)/register" />
+        <Stack.Screen name="(auth)/check-email" />
+        <Stack.Screen name="(auth)/check-email-reset" />
+        <Stack.Screen name="(auth)/reset-password" />
+        <Stack.Screen name="(auth)/email-verified" />
+        <Stack.Screen name="(auth)/role-selection" />
+        <Stack.Screen name="(auth)/onboarding" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(admin)" />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <OnboardingOverlay />
+      <StatusBar style="auto" />
+    </AuthProvider>
     </ErrorBoundary>
   );
 }

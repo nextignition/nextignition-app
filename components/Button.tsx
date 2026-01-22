@@ -46,11 +46,11 @@ export function Button({
   // Merge styles ensuring web constraints override width properties
   const getButtonStyle = (pressed: boolean) => {
     const baseStyles = [
-      styles.base,
-      styles[variant],
-      isGradientVariant && styles.gradientBase,
-      pressed && styles.pressed,
-      isDisabled && styles.disabled,
+        styles.base,
+        styles[variant],
+        isGradientVariant && styles.gradientBase,
+        pressed && styles.pressed,
+        isDisabled && styles.disabled,
     ];
     
     if (Platform.OS === 'web') {

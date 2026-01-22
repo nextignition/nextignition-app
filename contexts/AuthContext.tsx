@@ -91,10 +91,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initSession = async () => {
       try {
-        setLoading(true);
+      setLoading(true);
         const { data, error } = await supabase.auth.getSession();
         
-        if (!isMounted) return;
+      if (!isMounted) return;
         
         if (error) {
           console.error('[Auth] Error getting session:', error);
@@ -111,13 +111,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
         
-        setSession(data.session ?? null);
-        setUser(data.session?.user ?? null);
+      setSession(data.session ?? null);
+      setUser(data.session?.user ?? null);
 
-        if (data.session?.user) {
-          await loadProfile(data.session.user.id);
-        } else {
-          setProfile(null);
+      if (data.session?.user) {
+        await loadProfile(data.session.user.id);
+      } else {
+        setProfile(null);
           setLoading(false);
         }
       } catch (error: any) {
