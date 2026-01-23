@@ -81,25 +81,26 @@ export function useExploreNetwork(initialFilters?: NetworkFilters) {
       
       console.log('[useExploreNetwork] Fetching with filters:', filters);
 
-      // Determine which profiles to fetch based on current user's role
+      // Determine which profiles to fetch based on current user's role and filters
       let targetRoles: string[] = [];
       
-      if (profile.role === 'founder' || profile.role === 'cofounder') {
-        // Founders see investors
-        targetRoles = ['investor'];
-      } else if (profile.role === 'investor') {
-        // Investors see founders and cofounders
-        targetRoles = ['founder', 'cofounder'];
-      } else if (profile.role === 'expert') {
-        // Experts see both founders and investors
-        // If role filter is set, use it; otherwise show all
-        if (filters.role) {
-          if (filters.role === 'founder') {
-            targetRoles = ['founder', 'cofounder'];
-          } else {
-            targetRoles = [filters.role];
-          }
+      // If role filter is explicitly set, use it (allows founders to see other founders)
+      if (filters.role) {
+        if (filters.role === 'founder') {
+          targetRoles = ['founder', 'cofounder'];
         } else {
+          targetRoles = [filters.role];
+        }
+      } else {
+        // Default behavior based on user's role (when no filter is set)
+        if (profile.role === 'founder' || profile.role === 'cofounder') {
+          // Founders see investors by default
+          targetRoles = ['investor'];
+        } else if (profile.role === 'investor') {
+          // Investors see founders and cofounders by default
+          targetRoles = ['founder', 'cofounder'];
+        } else if (profile.role === 'expert') {
+          // Experts see all by default
           targetRoles = ['founder', 'cofounder', 'investor', 'expert'];
         }
       }
@@ -116,7 +117,8 @@ export function useExploreNetwork(initialFilters?: NetworkFilters) {
         .from('profiles')
         .select('*')
         .neq('id', user.id) // Exclude current user
-        .in('role', targetRoles);
+        .in('role', targetRoles)
+        .not('role', 'is', null); // Ensure role is not null
 
       // Apply additional filters
       if (filters.location) {
@@ -137,9 +139,19 @@ export function useExploreNetwork(initialFilters?: NetworkFilters) {
 
       const { data: profilesData, error: profilesError } = await query
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100); // Increased limit to show more profiles
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('[useExploreNetwork] Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      console.log('[useExploreNetwork] Fetched profiles:', {
+        count: profilesData?.length || 0,
+        targetRoles,
+        roleFilter: filters.role,
+        userRole: profile.role,
+      });
 
       setProfiles(profilesData || []);
 
@@ -193,7 +205,7 @@ export function useExploreNetwork(initialFilters?: NetworkFilters) {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, profile?.role, filters.search, filters.industry, filters.stage, filters.location, filters.role]);
+  }, [user?.id, profile?.role, filters.search, filters.industry, filters.stage, filters.location, filters.role, JSON.stringify(filters)]);
 
   useEffect(() => {
     // Debounce the fetch for search queries
