@@ -363,26 +363,26 @@ export default function FundingStatusScreen() {
             <Text style={styles.sectionTitle}>Funding Analytics</Text>
             <View style={styles.analyticsGrid}>
               <View style={styles.analyticsCard}>
-                <Eye size={24} color={COLORS.primary} strokeWidth={2} />
+                <Eye size={20} color={COLORS.primary} strokeWidth={2} />
                 <Text style={styles.analyticsValue}>
                   {fundingRequests.reduce((sum, r) => sum + r.investorsViewed, 0)}
                 </Text>
                 <Text style={styles.analyticsLabel}>Total Views</Text>
               </View>
               <View style={styles.analyticsCard}>
-                <Users size={24} color={COLORS.primary} strokeWidth={2} />
+                <Users size={20} color={COLORS.primary} strokeWidth={2} />
                 <Text style={styles.analyticsValue}>{interestedInvestors.length}</Text>
                 <Text style={styles.analyticsLabel}>Interested Investors</Text>
               </View>
               <View style={styles.analyticsCard}>
-                <DollarSign size={24} color={COLORS.primary} strokeWidth={2} />
+                <DollarSign size={20} color={COLORS.primary} strokeWidth={2} />
                 <Text style={styles.analyticsValue}>
                   {formatCurrency(fundingRequests.reduce((sum, r) => sum + r.totalInterestAmount, 0))}
                 </Text>
                 <Text style={styles.analyticsLabel}>Total Interest</Text>
               </View>
               <View style={styles.analyticsCard}>
-                <TrendingUp size={24} color={COLORS.primary} strokeWidth={2} />
+                <TrendingUp size={20} color={COLORS.primary} strokeWidth={2} />
                 <Text style={styles.analyticsValue}>{fundingRequests.length}</Text>
                 <Text style={styles.analyticsLabel}>Active Requests</Text>
               </View>
@@ -438,8 +438,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.md,
-    padding: 4,
-    gap: SPACING.xs,
+    padding: 3,
+    gap: SPACING.xs / 2,
     ...SHADOWS.xs,
   },
   tab: {
@@ -447,21 +447,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.xs,
-    paddingVertical: SPACING.md,
+    gap: SPACING.xs / 2,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
     borderRadius: BORDER_RADIUS.sm,
   },
   tabActive: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: COLORS.primaryLight + '80',
   },
   tabText: {
     ...TYPOGRAPHY.body,
     fontFamily: FONT_FAMILY.bodyMedium,
+    fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
   },
   tabTextActive: {
     color: COLORS.primary,
     fontFamily: FONT_FAMILY.bodyBold,
+    fontSize: FONT_SIZES.sm,
   },
   section: {
     gap: SPACING.md,
@@ -482,6 +485,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     ...SHADOWS.sm,
     gap: SPACING.md,
+    overflow: 'hidden',
   },
   requestHeader: {
     flexDirection: 'row',
@@ -503,24 +507,34 @@ const styles = StyleSheet.create({
   },
   requestStats: {
     flexDirection: 'row',
-    gap: SPACING.lg,
+    flexWrap: 'wrap',
+    gap: SPACING.md,
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
+    justifyContent: 'space-between',
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs / 2,
+    flexBasis: '30%',
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 80,
   },
   statValue: {
     ...TYPOGRAPHY.bodyStrong,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text,
+    fontSize: FONT_SIZES.sm,
+    flexShrink: 1,
   },
   statLabel: {
     ...TYPOGRAPHY.caption,
     color: COLORS.textSecondary,
+    fontSize: FONT_SIZES.xs,
+    flexShrink: 1,
   },
   investorsList: {
     gap: SPACING.md,
@@ -636,28 +650,44 @@ const styles = StyleSheet.create({
   analyticsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.md,
+    marginTop: SPACING.sm,
+    gap: SPACING.sm,
+    justifyContent: 'space-between',
   },
   analyticsCard: {
     width: '48%',
-    padding: SPACING.lg,
+    padding: SPACING.sm,
+    marginBottom: SPACING.md,
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.sm,
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: SPACING.xs / 2,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 200,
+      padding: SPACING.lg,
+      gap: SPACING.sm,
+    }),
   },
   analyticsValue: {
     fontFamily: FONT_FAMILY.displayBold,
-    fontSize: FONT_SIZES.xxl,
+    fontSize: FONT_SIZES.xl,
     color: COLORS.text,
+    ...(Platform.OS === 'web' && {
+      fontSize: FONT_SIZES.xxl,
+    }),
   },
   analyticsLabel: {
     ...TYPOGRAPHY.body,
     color: COLORS.text,
     fontFamily: FONT_FAMILY.bodyBold,
+    fontSize: FONT_SIZES.xs,
+    textAlign: 'center',
+    ...(Platform.OS === 'web' && {
+      fontSize: FONT_SIZES.sm,
+    }),
   },
   analyticsChange: {
     ...TYPOGRAPHY.caption,
@@ -677,7 +707,11 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: SPACING.xl * 2,
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    width: '100%',
+    alignSelf: 'center',
+    maxWidth: 520,
     gap: SPACING.sm,
   },
   emptyText: {

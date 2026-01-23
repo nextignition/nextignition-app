@@ -617,10 +617,17 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   emptyContainer: {
-    padding: SPACING.xl,
+    // Mobile-friendly empty state spacing/alignment
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.md,
+    width: '100%',
+    alignSelf: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 520,
+    }),
   },
   emptyText: {
     ...TYPOGRAPHY.title,

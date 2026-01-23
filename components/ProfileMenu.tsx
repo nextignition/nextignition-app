@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -22,7 +21,6 @@ import {
   LogOut,
   HelpCircle,
   Bell,
-  Shield,
   CreditCard,
   ShieldCheck,
 } from 'lucide-react-native';
@@ -45,12 +43,13 @@ export function ProfileMenu({ visible, onClose }: ProfileMenuProps) {
       route: '/(tabs)/profile',
       color: COLORS.text,
     },
-    {
-      icon: Settings,
-      label: 'Settings',
-      route: '/(tabs)/settings',
-      color: COLORS.text,
-    },
+    // Settings option commented out - keep for future use
+    // {
+    //   icon: Settings,
+    //   label: 'Settings',
+    //   route: '/(tabs)/settings',
+    //   color: COLORS.text,
+    // },
     {
       icon: Bell,
       label: 'Notifications',
@@ -61,12 +60,6 @@ export function ProfileMenu({ visible, onClose }: ProfileMenuProps) {
       icon: CreditCard,
       label: 'Subscription',
       route: '/(tabs)/subscription',
-      color: COLORS.text,
-    },
-    {
-      icon: Shield,
-      label: 'Security',
-      route: '/(tabs)/security',
       color: COLORS.text,
     },
     {

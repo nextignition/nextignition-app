@@ -77,7 +77,41 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
+  // Load cached stats immediately to avoid empty boxes
+  const loadCachedStats = (): { stats: PlatformStats | null; hasCache: boolean } => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const cached = window.localStorage.getItem('platform_stats');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          // Check if cache is less than 1 hour old
+          const cacheTime = window.localStorage.getItem('platform_stats_time');
+          if (cacheTime) {
+            const age = Date.now() - parseInt(cacheTime, 10);
+            if (age < 3600000) { // 1 hour
+              return { stats: parsed, hasCache: true };
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error loading cached stats:', e);
+      }
+    }
+    return { stats: null, hasCache: false };
+  };
+
+  // Initialize with cached stats or default placeholder values
+  const cachedData = loadCachedStats();
+  const [platformStats, setPlatformStats] = useState<PlatformStats | null>(() => {
+    // If no cache, use placeholder values to avoid empty boxes
+    return cachedData.stats || {
+      investor_count: 0,
+      founder_count: 0,
+      capital_raised: 0,
+    };
+  });
+  const [hasCachedStats] = useState(cachedData.hasCache);
+  const [platformStatsLoading, setPlatformStatsLoading] = useState(true);
 
   // Fetch platform stats on mount
   useEffect(() => {
@@ -87,14 +121,28 @@ export default function LoginScreen() {
         
         if (error) {
           console.error('Error fetching platform stats:', error);
+          // Keep existing stats (cached or placeholder) on error
+          setPlatformStatsLoading(false);
           return;
         }
         
         if (data) {
           setPlatformStats(data);
+          // Cache the stats for next time
+          if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+            try {
+              window.localStorage.setItem('platform_stats', JSON.stringify(data));
+              window.localStorage.setItem('platform_stats_time', Date.now().toString());
+            } catch (e) {
+              console.error('Error caching stats:', e);
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching platform stats:', err);
+        // Keep existing stats on error
+      } finally {
+        setPlatformStatsLoading(false);
       }
     };
 
@@ -234,32 +282,40 @@ export default function LoginScreen() {
               Tap into curated capital, operator knowledge, and a private network designed for
               breakout founders.
             </Text>
-            <View style={styles.heroStats}>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>
-                  {platformStats !== null
-                    ? `${formatNumber(platformStats.investor_count)}+` 
-                    : '70+'}
-                </Text>
-                <Text style={styles.statLabel}>Active investors</Text>
+            {platformStats && (
+              <View style={styles.heroStats}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>
+                    {platformStatsLoading && !hasCachedStats && platformStats.investor_count === 0 ? (
+                      <Text style={styles.statValuePlaceholder}>...</Text>
+                    ) : (
+                      `${formatNumber(platformStats.investor_count)}+`
+                    )}
+                  </Text>
+                  <Text style={styles.statLabel}>Active investors</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>
+                    {platformStatsLoading && !hasCachedStats && platformStats.founder_count === 0 ? (
+                      <Text style={styles.statValuePlaceholder}>...</Text>
+                    ) : (
+                      formatNumber(platformStats.founder_count)
+                    )}
+                  </Text>
+                  <Text style={styles.statLabel}>Global founders</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>
+                    {platformStatsLoading && !hasCachedStats && platformStats.capital_raised === 0 ? (
+                      <Text style={styles.statValuePlaceholder}>...</Text>
+                    ) : (
+                      formatCurrency(platformStats.capital_raised)
+                    )}
+                  </Text>
+                  <Text style={styles.statLabel}>Capital raised</Text>
+                </View>
               </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>
-                  {platformStats !== null
-                    ? formatNumber(platformStats.founder_count) 
-                    : '12k'}
-                </Text>
-                <Text style={styles.statLabel}>Global founders</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>
-                  {platformStats !== null
-                    ? formatCurrency(platformStats.capital_raised) 
-                    : '$180M'}
-                </Text>
-                <Text style={styles.statLabel}>Capital raised</Text>
-              </View>
-            </View>
+            )}
           </View>
 
           <LinearGradient colors={GRADIENTS.primary} style={styles.formCard}>
@@ -426,6 +482,11 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
     flexWrap: 'wrap',
   },
+  heroStatsSkeleton: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    flexWrap: 'wrap',
+  },
   statCard: {
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
@@ -435,10 +496,25 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 120,
   },
+  statCardSkeleton: {
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    flex: 1,
+    minWidth: 120,
+    minHeight: 56,
+  },
   statValue: {
     fontFamily: FONT_FAMILY.displayBold,
     fontSize: 28,
     color: COLORS.background,
+  },
+  statValuePlaceholder: {
+    fontFamily: FONT_FAMILY.displayBold,
+    fontSize: 28,
+    color: 'rgba(255,255,255,0.5)',
   },
   statLabel: {
     ...TYPOGRAPHY.caption,

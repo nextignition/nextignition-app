@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   TextInput,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInputProps,
+  Platform,
 } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import {
@@ -24,7 +25,7 @@ interface InputProps extends TextInputProps {
   type?: 'text' | 'email' | 'password';
 }
 
-export function Input({
+const InputComponent = React.memo(function Input({
   label,
   error,
   type = 'text',
@@ -34,34 +35,51 @@ export function Input({
 }: InputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const inputRef = React.useRef<TextInput>(null);
 
   const isPassword = type === 'password';
   const secureEntry = isPassword && !showPassword;
+
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+  }, []);
+
+  const handleBlur = useCallback(() => {
+    setIsFocused(false);
+  }, []);
+
+  const togglePassword = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
+
+  const inputStyle = useMemo(() => [
+    styles.input,
+    isFocused && styles.inputFocused,
+    error && styles.inputError,
+  ], [isFocused, error]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputWrapper}>
         <TextInput
-          style={[
-            styles.input,
-            isFocused && styles.inputFocused,
-            error && styles.inputError,
-          ]}
+          ref={inputRef}
+          style={inputStyle}
           value={value}
           onChangeText={onChangeText}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           secureTextEntry={secureEntry}
           autoCapitalize={type === 'email' ? 'none' : 'sentences'}
           keyboardType={type === 'email' ? 'email-address' : 'default'}
           placeholderTextColor={COLORS.textSecondary}
+          {...(Platform.OS === 'web' && { outlineStyle: 'none' })}
           {...props}
         />
         {isPassword && (
           <TouchableOpacity
             style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}>
+            onPress={togglePassword}>
             {showPassword ? (
               <EyeOff size={20} color={COLORS.textSecondary} />
             ) : (
@@ -73,7 +91,9 @@ export function Input({
       {error && <Text style={styles.error}>{error}</Text>}
     </View>
   );
-}
+});
+
+export const Input = InputComponent;
 
 const styles = StyleSheet.create({
   container: {

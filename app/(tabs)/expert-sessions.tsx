@@ -53,6 +53,7 @@ export default function ExpertSessionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
+  const [tempStatusFilter, setTempStatusFilter] = useState('');
 
   const {
     requests,
@@ -91,6 +92,18 @@ export default function ExpertSessionsScreen() {
       error,
     });
   }, [requests, pendingRequests, loading, error]);
+
+  // Initialize temporary filters when filter panel opens
+  useEffect(() => {
+    if (showFilters) {
+      setTempStatusFilter(statusFilter);
+    }
+  }, [showFilters]);
+
+  const handleApplyFilters = () => {
+    setStatusFilter(tempStatusFilter);
+    setShowFilters(false);
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -285,6 +298,7 @@ export default function ExpertSessionsScreen() {
                   onPress={() => {
                     setSearchQuery('');
                     setStatusFilter('');
+                    setTempStatusFilter('');
                   }}
                   style={styles.clearAllButton}
                 >
@@ -292,12 +306,18 @@ export default function ExpertSessionsScreen() {
                 </TouchableOpacity>
               )}
             </View>
-            <View style={styles.filtersContent}>
+            <ScrollView
+              style={styles.filtersScroll}
+              contentContainerStyle={styles.filtersContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+            >
               <View style={styles.filterRow}>
                 <Text style={styles.filterLabel}>Status</Text>
                 <Picker
-                  value={statusFilter}
-                  onValueChange={setStatusFilter}
+                  value={tempStatusFilter}
+                  onValueChange={setTempStatusFilter}
                   items={[
                     { label: 'All Status', value: '' },
                     { label: 'Pending', value: 'pending' },
@@ -307,6 +327,16 @@ export default function ExpertSessionsScreen() {
                   placeholder="Select status"
                 />
               </View>
+            </ScrollView>
+            
+            <View style={styles.applyButtonContainer}>
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={handleApplyFilters}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.applyButtonText}>Apply Filters</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -1123,6 +1153,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     gap: SPACING.md,
   },
+  filtersScroll: {
+    maxHeight: 240,
+  },
   filterRow: {
     gap: SPACING.xs,
   },
@@ -1131,6 +1164,28 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text,
     marginBottom: SPACING.xs,
+  },
+  applyButtonContainer: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    marginTop: SPACING.sm,
+  },
+  applyButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
+  },
+  applyButtonText: {
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.background,
   },
 });
 

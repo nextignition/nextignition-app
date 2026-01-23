@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { Video as ExpoVideo } from 'expo-av';
+import { Video as ExpoVideo, AVPlaybackStatus } from 'expo-av';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/Button';
 import {
@@ -39,13 +39,16 @@ export default function PitchVideoScreen() {
   const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions();
   const [recording, setRecording] = useState(false);
   const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [cameraReady, setCameraReady] = useState(false);
   const [visibility, setVisibility] = useState<'public' | 'private'>('private');
   const cameraRef = useRef<CameraView>(null);
+  const videoRef = useRef<ExpoVideo>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recordingRef = useRef(false);
+  const [playbackStatus, setPlaybackStatus] = useState<AVPlaybackStatus | null>(null);
 
   const MAX_DURATION = 120; // 2 minutes
 
@@ -70,6 +73,13 @@ export default function PitchVideoScreen() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    // Reset video to start when preview is shown
+    if (showPreview && videoRef.current && recordedVideo) {
+      videoRef.current.setPositionAsync(0);
+    }
+  }, [showPreview, recordedVideo]);
 
   const startRecording = async () => {
     if (!cameraRef.current) {
@@ -119,6 +129,7 @@ export default function PitchVideoScreen() {
         if (video?.uri) {
           console.log('Video URI received:', video.uri);
           setRecordedVideo(video.uri);
+          setShowPreview(false); // Don't show preview automatically, wait for button click
         } else {
           console.log('No video URI received');
         }
@@ -253,7 +264,24 @@ export default function PitchVideoScreen() {
 
   const handleRetake = () => {
     setRecordedVideo(null);
+    setShowPreview(false);
     setTimeElapsed(0);
+  };
+
+  const handleShowPreview = () => {
+    setShowPreview(true);
+  };
+
+  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    setPlaybackStatus(status);
+    
+    // If video just finished, reset position to start when user plays again
+    if (status.isLoaded && status.didJustFinish) {
+      // Reset video position to start
+      if (videoRef.current) {
+        videoRef.current.setPositionAsync(0);
+      }
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -329,14 +357,24 @@ export default function PitchVideoScreen() {
                   </View>
                 )}
               </>
-            ) : (
+            ) : showPreview ? (
               <ExpoVideo
+                ref={videoRef}
                 source={{ uri: recordedVideo }}
                 style={styles.camera}
                 useNativeControls
                 resizeMode="contain"
                 isLooping={false}
+                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
               />
+            ) : (
+              <View style={styles.videoPreviewPlaceholder}>
+                <Video size={64} color={COLORS.primary} strokeWidth={2} />
+                <Text style={styles.videoPreviewPlaceholderText}>Video Recorded</Text>
+                <Text style={styles.videoPreviewPlaceholderHint}>
+                  Tap "Preview Video" to watch your recording
+                </Text>
+              </View>
             )}
           </View>
 
@@ -364,19 +402,34 @@ export default function PitchVideoScreen() {
 
           {recordedVideo && (
             <>
-              <Text style={styles.previewLabel}>Preview your video above</Text>
-              <View style={styles.videoActions}>
-                <TouchableOpacity
-                  style={styles.retakeButton}
-                  onPress={handleRetake}
-                  activeOpacity={0.7}>
-                  <Text style={styles.retakeButtonText}>Retake</Text>
-                </TouchableOpacity>
-              </View>
+              {!showPreview && (
+                <View style={styles.videoActions}>
+                  <TouchableOpacity
+                    style={styles.previewButton}
+                    onPress={handleShowPreview}
+                    activeOpacity={0.7}>
+                    <Play size={20} color={COLORS.background} strokeWidth={2} />
+                    <Text style={styles.previewButtonText}>Preview Video</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {showPreview && (
+                <>
+                  <Text style={styles.previewLabel}>Preview your video above</Text>
+                  <View style={styles.videoActions}>
+                    <TouchableOpacity
+                      style={styles.retakeButton}
+                      onPress={handleRetake}
+                      activeOpacity={0.7}>
+                      <Text style={styles.retakeButtonText}>Retake</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
             </>
           )}
 
-          {recordedVideo && (
+          {recordedVideo && showPreview && (
             <View style={styles.visibilityCard}>
               <Text style={styles.visibilityTitle}>Who can see this video?</Text>
               <View style={styles.visibilityOptions}>
@@ -449,7 +502,7 @@ export default function PitchVideoScreen() {
           </Text>
         </View>
 
-        {recordedVideo && (
+        {recordedVideo && showPreview && (
           <Button
             title={uploading ? 'Uploading...' : 'Upload Video'}
             onPress={handleUpload}
@@ -558,6 +611,24 @@ const styles = StyleSheet.create({
     color: COLORS.background,
     fontFamily: FONT_FAMILY.bodyBold,
   },
+  videoPreviewPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.navy,
+    gap: SPACING.md,
+  },
+  videoPreviewPlaceholderText: {
+    ...TYPOGRAPHY.title,
+    fontFamily: FONT_FAMILY.displayMedium,
+    color: COLORS.background,
+  },
+  videoPreviewPlaceholderHint: {
+    ...TYPOGRAPHY.body,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+    paddingHorizontal: SPACING.lg,
+  },
   recordingOverlay: {
     position: 'absolute',
     top: SPACING.md,
@@ -660,6 +731,22 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
   },
   playButtonText: {
+    ...TYPOGRAPHY.bodyStrong,
+    color: COLORS.background,
+    fontFamily: FONT_FAMILY.bodyBold,
+  },
+  previewButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.md,
+    ...SHADOWS.md,
+  },
+  previewButtonText: {
     ...TYPOGRAPHY.bodyStrong,
     color: COLORS.background,
     fontFamily: FONT_FAMILY.bodyBold,

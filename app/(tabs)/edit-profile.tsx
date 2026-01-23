@@ -9,6 +9,8 @@ import {
   Platform,
   TouchableOpacity,
   Alert,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,13 +18,14 @@ import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { RoleSpecificFields } from '@/components/RoleSpecificFields';
 import { COLORS, SPACING, FONT_SIZES, FONT_WEIGHTS } from '@/constants/theme';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Camera, UserRound } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useNotification } from '@/hooks/useNotification';
 import { NotificationContainer } from '@/components/NotificationContainer';
+import { launchImageLibraryAsync, requestMediaLibraryPermissionsAsync } from 'expo-image-picker';
 
 export default function EditProfileScreen() {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, user } = useAuth();
   const { notifications, showSuccess, showError, dismissNotification } = useNotification();
   const [loading, setLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -56,6 +59,8 @@ export default function EditProfileScreen() {
     hourlyRate: '',
     expertiseAreas: '',
   });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
 
   // Only initialize form fields once when profile first loads
   useEffect(() => {
@@ -97,9 +102,103 @@ export default function EditProfileScreen() {
           : (profile.expertise_areas || ''),
       });
       
+      setAvatarUrl(profile.avatar_url || '');
       setIsInitialized(true);
     }
   }, [profile, isInitialized]);
+
+  const handleUploadAvatar = async () => {
+    if (!user?.id) {
+      showError('User not authenticated');
+      return;
+    }
+
+    try {
+      const { status } = await requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        showError('Permission to access camera roll is required!');
+        return;
+      }
+
+      const result = await launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const image = result.assets[0];
+      if (!image.uri) {
+        showError('Failed to get image');
+        return;
+      }
+
+      setAvatarUploading(true);
+
+      let fileData: Blob | ArrayBuffer;
+      let contentType = 'image/jpeg';
+
+      if (Platform.OS === 'web') {
+        const response = await fetch(image.uri);
+        fileData = await response.blob();
+        contentType = response.headers.get('content-type') || 'image/jpeg';
+      } else {
+        const response = await fetch(image.uri);
+        fileData = await response.arrayBuffer();
+        if (image.uri.includes('.png')) {
+          contentType = 'image/png';
+        } else if (image.uri.includes('.jpg') || image.uri.includes('.jpeg')) {
+          contentType = 'image/jpeg';
+        }
+      }
+
+      const fileName = `avatar_${user.id}_${Date.now()}.${contentType.includes('png') ? 'png' : 'jpg'}`;
+      const storagePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(storagePath, fileData, {
+          contentType,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        if (uploadError.message?.includes('Bucket not found') || uploadError.message?.includes('not found')) {
+          throw new Error('Storage bucket "avatars" not found. Please create it in Supabase Dashboard > Storage.');
+        }
+        throw uploadError;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(storagePath);
+
+      const newAvatarUrl = urlData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: newAvatarUrl })
+        .eq('id', user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Update local and global profile immediately
+      setAvatarUrl(newAvatarUrl);
+      await refreshProfile();
+      showSuccess('Profile photo updated successfully!');
+    } catch (error: any) {
+      console.error('EditProfile avatar upload error:', error);
+      showError(error.message || 'Failed to upload profile photo. Please try again.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     // Prevent multiple simultaneous saves
@@ -216,6 +315,32 @@ export default function EditProfileScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
+          <View style={styles.avatarSection}>
+            <TouchableOpacity
+              style={styles.avatarContainer}
+              onPress={handleUploadAvatar}
+              disabled={avatarUploading}
+              activeOpacity={0.7}>
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatarImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <UserRound size={40} color={COLORS.primary} />
+              )}
+              <View style={styles.avatarEditOverlay}>
+                {avatarUploading ? (
+                  <ActivityIndicator size="small" color={COLORS.background} />
+                ) : (
+                  <Camera size={16} color={COLORS.background} strokeWidth={2} />
+                )}
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.avatarLabel}>Profile Photo</Text>
+          </View>
+
           <Input
             label="Full Name"
             value={fullName}
@@ -329,6 +454,43 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: SPACING.lg,
     paddingBottom: SPACING.xxl,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+  },
+  avatarContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: COLORS.inputBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 48,
+  },
+  avatarEditOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.background,
+  },
+  avatarLabel: {
+    marginTop: SPACING.sm,
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
   },
   textArea: {
     height: 100,

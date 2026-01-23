@@ -1006,14 +1006,15 @@ const styles = StyleSheet.create({
   detailsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.md,
     marginBottom: SPACING.xl,
+    justifyContent: 'space-between',
   },
   detailItem: {
     width: '48%',
     backgroundColor: COLORS.inputBackground,
     padding: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING.md,
   },
   detailIcon: {
     width: 40,
@@ -1062,7 +1063,7 @@ const styles = StyleSheet.create({
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.md,
+    justifyContent: 'space-between',
   },
   metricCard: {
     width: '48%',
@@ -1070,6 +1071,7 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
+    marginBottom: SPACING.md,
   },
   metricLabel: {
     fontSize: FONT_SIZES.sm,

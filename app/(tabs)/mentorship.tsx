@@ -1250,10 +1250,17 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
   },
   emptyContainer: {
-    padding: SPACING.xl * 2,
+    // Mobile-friendly spacing (old padding was too large and looked misaligned on small screens)
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.md,
+    width: '100%',
+    alignSelf: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 520,
+    }),
   },
   emptyTitle: {
     ...TYPOGRAPHY.title,

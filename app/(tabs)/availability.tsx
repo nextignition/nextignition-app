@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -254,7 +255,7 @@ export default function AvailabilityScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
         }>
-        <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
+        <LinearGradient colors={GRADIENTS.primary as any} style={styles.heroCard}>
           <View style={styles.heroHeader}>
             <View style={styles.heroIcon}>
               <Calendar size={28} color={COLORS.background} strokeWidth={2} />
@@ -480,7 +481,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    ...TYPOGRAPHY.h2,
+    ...TYPOGRAPHY.title,
     fontFamily: FONT_FAMILY.displayBold,
     color: COLORS.primary,
     marginBottom: SPACING.xs / 2,
@@ -644,10 +645,17 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
   },
   emptyContainer: {
-    padding: SPACING.xl * 2,
+    // Mobile-friendly empty state spacing/alignment (keep consistent across app)
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.md,
+    width: '100%',
+    alignSelf: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 520,
+    }),
   },
   emptyTitle: {
     ...TYPOGRAPHY.title,

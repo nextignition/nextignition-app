@@ -10,7 +10,9 @@ import {
   Platform,
   RefreshControl,
   Alert,
+  Keyboard,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useConversations, useMessages, useTypingIndicator, useBroadcastPresence, usePresence, markMessagesAsRead } from '@/hooks/useChat';
@@ -28,34 +30,37 @@ import { Conversation, Message } from '@/types/chat';
 type TabType = 'channels' | 'direct';
 
 // MessageList component with auto-scroll
-function MessageList({ 
-  messages, 
-  typingUsers, 
-  conversationId,
-  onReply,
-  onDelete,
-}: { 
+const MessageList = React.forwardRef<FlatList, { 
   messages: Message[]; 
   typingUsers: string[]; 
   conversationId: string | null;
   onReply?: (message: Message) => void;
   onDelete?: (messageId: string) => void;
-}) {
+}>(({ 
+  messages, 
+  typingUsers, 
+  conversationId,
+  onReply,
+  onDelete,
+}, ref) => {
   const flatListRef = useRef<FlatList>(null);
+  
+  // Use forwarded ref or internal ref
+  const listRef = (ref as React.RefObject<FlatList>) || flatListRef;
   const { user } = useAuth();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToEnd({ animated: true });
+      });
     }
   }, [messages.length]);
 
   return (
     <FlatList
-      ref={flatListRef}
+      ref={listRef}
       data={messages}
       renderItem={({ item }) => (
         <MessageBubble 
@@ -66,11 +71,10 @@ function MessageList({
       )}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.messagesList}
+      style={styles.messagesListContainer}
       showsVerticalScrollIndicator={false}
       inverted={false}
-      onContentSizeChange={() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }}
+      keyboardShouldPersistTaps="handled"
       ListEmptyComponent={
         <View style={styles.emptyMessages}>
           <MessageSquare size={48} color={COLORS.textSecondary} />
@@ -83,19 +87,40 @@ function MessageList({
       ListFooterComponent={<TypingIndicator typingUsers={typingUsers} />}
     />
   );
-}
+});
+
+MessageList.displayName = 'MessageList';
 
 export default function ChatScreen() {
   const params = useLocalSearchParams();
   const { profile } = useAuth();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>('direct');
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const { channels, directMessages, loading: conversationsLoading, conversations, refresh } = useConversations();
   const { messages, sendMessage, loading: messagesLoading } = useMessages(selectedConversation?.id || null);
   const { typingUsers, startTyping, stopTyping } = useTypingIndicator(selectedConversation?.id || null);
+  const messageListRef = useRef<FlatList>(null);
   
   // Broadcast own presence
   useBroadcastPresence();
+  
+  // Scroll to bottom when keyboard opens
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        // Small delay to ensure layout has adjusted
+        setTimeout(() => {
+          messageListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
   
   // Get other user's presence in direct chat
   // Need to fetch the other user's ID from conversation members
@@ -251,7 +276,7 @@ export default function ChatScreen() {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.chatContainer}
-          keyboardVerticalOffset={0}>
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -insets.bottom}>
           <View style={styles.chatHeader}>
             <TouchableOpacity
               style={styles.backButton}
@@ -293,6 +318,7 @@ export default function ChatScreen() {
             </View>
           ) : (
             <MessageList
+              ref={messageListRef}
               messages={messages}
               typingUsers={typingUsers}
               conversationId={selectedConversation?.id || null}
@@ -560,6 +586,9 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyMedium,
     fontSize: FONT_SIZES.md,
     color: COLORS.textSecondary,
+  },
+  messagesListContainer: {
+    flex: 1,
   },
   messagesList: {
     paddingVertical: SPACING.md,

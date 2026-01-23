@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -59,6 +59,41 @@ export default function NetworkScreen() {
   const [roleFilter, setRoleFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [chatLoading, setChatLoading] = useState<Record<string, boolean>>({});
+  
+  // Temporary filter states (only applied when user clicks "Apply Filter")
+  const [tempRoleFilter, setTempRoleFilter] = useState('');
+  const [tempIndustryFilter, setTempIndustryFilter] = useState('');
+  const [tempStageFilter, setTempStageFilter] = useState('');
+  const [tempLocationFilter, setTempLocationFilter] = useState('');
+
+  // Default role filter behavior:
+  // - Founder dashboard should show founders by default
+  // - Investors typically also want founders by default
+  // - Experts can browse all roles by default
+  const defaultRoleFilter = useMemo(() => {
+    const r = profile?.role;
+    if (r === 'founder' || r === 'cofounder') return 'founder';
+    if (r === 'investor') return 'founder';
+    return ''; // expert/admin/unknown => all roles
+  }, [profile?.role]);
+
+  // Initialize role filter to default once profile is known (but don't keep overwriting user choice)
+  useEffect(() => {
+    if (!roleFilter && defaultRoleFilter) {
+      setRoleFilter(defaultRoleFilter);
+      setTempRoleFilter(defaultRoleFilter);
+    }
+  }, [defaultRoleFilter, roleFilter]);
+
+  // Initialize temporary filters when filter panel opens
+  useEffect(() => {
+    if (showFilters) {
+      setTempRoleFilter(roleFilter || defaultRoleFilter);
+      setTempIndustryFilter(industryFilter);
+      setTempStageFilter(stageFilter);
+      setTempLocationFilter(locationFilter);
+    }
+  }, [showFilters, roleFilter, industryFilter, stageFilter, locationFilter, defaultRoleFilter]);
 
   const {
     profiles,
@@ -87,7 +122,7 @@ export default function NetworkScreen() {
     industryFilter ||
     stageFilter ||
     locationFilter ||
-    roleFilter
+    (roleFilter && roleFilter !== defaultRoleFilter)
   );
 
   const clearAllFilters = () => {
@@ -96,7 +131,19 @@ export default function NetworkScreen() {
     setIndustryFilter('');
     setStageFilter('');
     setLocationFilter('');
-    setRoleFilter('');
+    setRoleFilter(defaultRoleFilter);
+    setTempRoleFilter(defaultRoleFilter);
+    setTempIndustryFilter('');
+    setTempStageFilter('');
+    setTempLocationFilter('');
+  };
+
+  const handleApplyFilters = () => {
+    setRoleFilter(tempRoleFilter);
+    setIndustryFilter(tempIndustryFilter);
+    setStageFilter(tempStageFilter);
+    setLocationFilter(tempLocationFilter);
+    setShowFilters(false);
   };
 
   const handleSearchSubmit = () => {
@@ -192,9 +239,6 @@ export default function NetworkScreen() {
     );
   }
 
-  const showFounders = profile?.role === 'investor' || profile?.role === 'expert';
-  const showInvestors = profile?.role === 'founder' || profile?.role === 'cofounder' || profile?.role === 'expert';
-
   return (
     <SafeAreaView style={styles.container}>
       {networkLoading && (
@@ -205,13 +249,7 @@ export default function NetworkScreen() {
       <LinearGradient colors={GRADIENTS.primary} style={styles.header}>
         <Text style={styles.headerTitle}>Explore Network</Text>
         <Text style={styles.headerSubtitle}>
-          {profile?.role === 'expert' 
-            ? 'Discover innovative startups and founders • Connect with founders and investors'
-            : showFounders 
-              ? 'Discover innovative startups and founders'
-              : showInvestors 
-                ? 'Connect with investors' 
-                : 'Connect with the startup ecosystem'}
+          {'Discover founders, investors, and experts — filter by role, industry, stage, and location.'}
         </Text>
       </LinearGradient>
 
@@ -272,24 +310,28 @@ export default function NetworkScreen() {
             )}
           </View>
           
-          <View style={styles.filtersContent}>
-            {profile?.role === 'expert' && (
-              <View style={styles.filterRow}>
-                <Text style={styles.filterLabel}>Role</Text>
-                <Picker
-                  value={roleFilter}
-                  onValueChange={setRoleFilter}
-                  items={ROLES}
-                  placeholder="Select role"
-                />
-              </View>
-            )}
+          <ScrollView
+            style={styles.filtersScroll}
+            contentContainerStyle={styles.filtersContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+          >
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Role</Text>
+              <Picker
+                value={tempRoleFilter}
+                onValueChange={setTempRoleFilter}
+                items={ROLES}
+                placeholder="Select role"
+              />
+            </View>
 
             <View style={styles.filterRow}>
               <Text style={styles.filterLabel}>Industry</Text>
               <Picker
-                value={industryFilter}
-                onValueChange={setIndustryFilter}
+                value={tempIndustryFilter}
+                onValueChange={setTempIndustryFilter}
                 items={INDUSTRIES}
                 placeholder="Select industry"
               />
@@ -298,8 +340,8 @@ export default function NetworkScreen() {
             <View style={styles.filterRow}>
               <Text style={styles.filterLabel}>Stage</Text>
               <Picker
-                value={stageFilter}
-                onValueChange={setStageFilter}
+                value={tempStageFilter}
+                onValueChange={setTempStageFilter}
                 items={STAGES}
                 placeholder="Select stage"
               />
@@ -311,10 +353,20 @@ export default function NetworkScreen() {
                 style={styles.filterInput}
                 placeholder="Enter location"
                 placeholderTextColor={COLORS.textSecondary}
-                value={locationFilter}
-                onChangeText={setLocationFilter}
+                value={tempLocationFilter}
+                onChangeText={setTempLocationFilter}
               />
             </View>
+          </ScrollView>
+          
+          <View style={styles.applyButtonContainer}>
+            <TouchableOpacity
+              style={styles.applyButton}
+              onPress={handleApplyFilters}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.applyButtonText}>Apply Filters</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -362,12 +414,12 @@ export default function NetworkScreen() {
                 </TouchableOpacity>
               </View>
             )}
-            {roleFilter && (
+            {roleFilter && roleFilter !== defaultRoleFilter && (
               <View style={styles.activeFilterChip}>
                 <Text style={styles.activeFilterText}>
                   Role: {ROLES.find(r => r.value === roleFilter)?.label || roleFilter}
                 </Text>
-                <TouchableOpacity onPress={() => setRoleFilter('')} style={styles.removeFilterButton}>
+                <TouchableOpacity onPress={() => setRoleFilter(defaultRoleFilter)} style={styles.removeFilterButton}>
                   <X size={14} color={COLORS.textSecondary} />
                 </TouchableOpacity>
               </View>
@@ -391,7 +443,7 @@ export default function NetworkScreen() {
           />
         ) : (
           <>
-            {showFounders && (!roleFilter || roleFilter === 'founder') && (
+            {(!roleFilter || roleFilter === 'founder') && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
                   Founders ({filteredProfiles.filter(p => p.role === 'founder' || p.role === 'cofounder').length})
@@ -416,7 +468,7 @@ export default function NetworkScreen() {
               </View>
             )}
 
-            {showInvestors && (!roleFilter || roleFilter === 'investor') && (
+            {(!roleFilter || roleFilter === 'investor') && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
                   Investors ({filteredProfiles.filter(p => p.role === 'investor').length})
@@ -435,7 +487,7 @@ export default function NetworkScreen() {
               </View>
             )}
 
-            {profile?.role === 'expert' && (!roleFilter || roleFilter === 'expert') && (
+            {(!roleFilter || roleFilter === 'expert') && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
                   Experts ({filteredProfiles.filter(p => p.role === 'expert').length})
@@ -630,6 +682,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     gap: SPACING.md,
   },
+  filtersScroll: {
+    // Make filters panel scrollable on mobile so lower fields (e.g., Location) are reachable
+    maxHeight: 240,
+  },
   filterRow: {
     gap: SPACING.xs,
   },
@@ -653,6 +709,28 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' && {
       outlineStyle: 'none',
     }),
+  },
+  applyButtonContainer: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    marginTop: SPACING.sm,
+  },
+  applyButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
+  },
+  applyButtonText: {
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.background,
   },
   activeFiltersContainer: {
     backgroundColor: COLORS.surfaceMuted,

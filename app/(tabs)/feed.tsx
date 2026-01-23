@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -87,6 +87,7 @@ export default function FeedScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [postTypeFilter, setPostTypeFilter] = useState('');
+  const [tempPostTypeFilter, setTempPostTypeFilter] = useState('');
 
   // Filter posts using useMemo to prevent re-filtering on every render
   const filteredPosts = useMemo(() => {
@@ -105,6 +106,18 @@ export default function FeedScreen() {
       return true;
     });
   }, [posts, searchQuery, postTypeFilter]);
+
+  // Initialize temporary filters when filter panel opens
+  useEffect(() => {
+    if (showFilters) {
+      setTempPostTypeFilter(postTypeFilter);
+    }
+  }, [showFilters]);
+
+  const handleApplyFilters = () => {
+    setPostTypeFilter(tempPostTypeFilter);
+    setShowFilters(false);
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -242,6 +255,7 @@ export default function FeedScreen() {
                   onPress={() => {
                     setSearchQuery('');
                     setPostTypeFilter('');
+                    setTempPostTypeFilter('');
                   }}
                   style={styles.clearAllButton}
                 >
@@ -249,16 +263,32 @@ export default function FeedScreen() {
                 </TouchableOpacity>
               )}
             </View>
-            <View style={styles.filtersContent}>
+            <ScrollView
+              style={styles.filtersScroll}
+              contentContainerStyle={styles.filtersContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+            >
               <View style={styles.filterRow}>
                 <Text style={styles.filterLabel}>Post Type</Text>
                 <Picker
-                  value={postTypeFilter}
-                  onValueChange={setPostTypeFilter}
+                  value={tempPostTypeFilter}
+                  onValueChange={setTempPostTypeFilter}
                   items={POST_TYPES}
                   placeholder="Select post type"
                 />
               </View>
+            </ScrollView>
+            
+            <View style={styles.applyButtonContainer}>
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={handleApplyFilters}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.applyButtonText}>Apply Filters</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -479,9 +509,17 @@ const styles = StyleSheet.create({
     color: COLORS.background,
   },
   emptyContainer: {
-    padding: SPACING.xl,
+    // Mobile-friendly empty state spacing/alignment
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: SPACING.md,
+    width: '100%',
+    alignSelf: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 520,
+    }),
   },
   emptyTitle: {
     ...TYPOGRAPHY.title,
@@ -681,6 +719,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     gap: SPACING.md,
   },
+  filtersScroll: {
+    maxHeight: 240,
+  },
   filterRow: {
     gap: SPACING.xs,
   },
@@ -689,5 +730,27 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text,
     marginBottom: SPACING.xs,
+  },
+  applyButtonContainer: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    marginTop: SPACING.sm,
+  },
+  applyButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
+  },
+  applyButtonText: {
+    fontSize: FONT_SIZES.md,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.background,
   },
 });

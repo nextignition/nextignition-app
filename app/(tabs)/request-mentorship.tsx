@@ -549,10 +549,17 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   emptyContainer: {
-    padding: SPACING.xl * 2,
+    // Mobile-friendly empty state spacing/alignment (keep consistent across app)
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.md,
+    width: '100%',
+    alignSelf: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 520,
+    }),
   },
   emptyTitle: {
     ...TYPOGRAPHY.title,

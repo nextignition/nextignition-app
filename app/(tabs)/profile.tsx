@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, Linking, Dimensions, Platform, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, Linking, Dimensions, Platform, RefreshControl, Image, ActivityIndicator, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +7,9 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useProfileStats } from '@/hooks/useProfileStats';
 import { Button } from '@/components/Button';
 import { ProfileMenu } from '@/components/ProfileMenu';
+import { launchImageLibraryAsync, requestMediaLibraryPermissionsAsync } from 'expo-image-picker';
+import { supabase } from '@/lib/supabase';
+import { useNotification } from '@/hooks/useNotification';
 import {
   BORDER_RADIUS,
   COLORS,
@@ -17,18 +20,21 @@ import {
   SPACING,
   TYPOGRAPHY,
 } from '@/constants/theme';
-import { UserRound, MapPin, Pencil, ExternalLink, MoreVertical, Mail, Briefcase, Award, TrendingUp, Users, MessageSquare } from 'lucide-react-native';
+import { UserRound, MapPin, Pencil, ExternalLink, MoreVertical, Mail, Briefcase, Award, TrendingUp, Users, MessageSquare, Camera } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 const isSmallScreen = width < 380;
 
 export default function ProfileScreen() {
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, user, refreshProfile } = useAuth();
   const { currentPlan, subscription, loading: subLoading } = useSubscription();
   const { stats, loading: statsLoading, refresh } = useProfileStats();
+  const { showSuccess, showError } = useNotification();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarPreviewVisible, setAvatarPreviewVisible] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -77,6 +83,119 @@ export default function ProfileScreen() {
 
   const handleEditProfile = () => {
     router.push('/(tabs)/edit-profile');
+  };
+
+  const handleUploadAvatar = async () => {
+    if (!user?.id) {
+      showError('User not authenticated');
+      return;
+    }
+
+    try {
+      // Request permissions
+      const { status } = await requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        showError('Permission to access camera roll is required!');
+        return;
+      }
+
+      // Launch image picker
+      const result = await launchImageLibraryAsync({
+        mediaTypes: 'images', // Use string value instead of MediaType.Images
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const image = result.assets[0];
+      if (!image.uri) {
+        showError('Failed to get image');
+        return;
+      }
+
+      // Show uploading state immediately after crop/selection
+      setUploadingAvatar(true);
+
+      // Read the image file
+      let fileData: Blob | ArrayBuffer;
+      let contentType = 'image/jpeg';
+
+      if (Platform.OS === 'web') {
+        // On web, fetch and convert to blob
+        const response = await fetch(image.uri);
+        fileData = await response.blob();
+        contentType = response.headers.get('content-type') || 'image/jpeg';
+      } else {
+        // On mobile, fetch as ArrayBuffer
+        const response = await fetch(image.uri);
+        fileData = await response.arrayBuffer();
+        // Try to determine content type from URI
+        if (image.uri.includes('.png')) {
+          contentType = 'image/png';
+        } else if (image.uri.includes('.jpg') || image.uri.includes('.jpeg')) {
+          contentType = 'image/jpeg';
+        }
+      }
+
+      // Upload to Supabase storage
+      const fileName = `avatar_${user.id}_${Date.now()}.${contentType.includes('png') ? 'png' : 'jpg'}`;
+      const storagePath = `${user.id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(storagePath, fileData, {
+          contentType,
+          upsert: true, // Replace if exists
+        });
+
+      if (uploadError) {
+        // Check if bucket doesn't exist
+        if (uploadError.message?.includes('Bucket not found') || uploadError.message?.includes('not found')) {
+          throw new Error('Storage bucket "avatars" not found. Please create it in Supabase Dashboard > Storage.');
+        }
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(storagePath);
+
+      const avatarUrl = urlData.publicUrl;
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Refresh profile to show new avatar
+      await refreshProfile();
+      showSuccess('Profile photo updated successfully!');
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      showError(error.message || 'Failed to upload profile photo. Please try again.');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarPress = () => {
+    if (profile?.avatar_url) {
+      // If avatar exists, show preview instead of reopening picker
+      setAvatarPreviewVisible(true);
+    } else {
+      // No avatar yet - open picker to upload
+      handleUploadAvatar();
+    }
   };
 
   const handleOpenLink = (url: string) => {
@@ -178,9 +297,28 @@ export default function ProfileScreen() {
         {/* Profile Header Card */}
         <View style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={styles.avatarContainer}>
-              <UserRound size={isSmallScreen ? 32 : 40} color={COLORS.accent} />
-            </View>
+            <TouchableOpacity
+              style={styles.avatarContainer}
+              onPress={handleAvatarPress}
+              disabled={uploadingAvatar}
+              activeOpacity={0.7}>
+              {profile?.avatar_url ? (
+                <Image
+                  source={{ uri: profile.avatar_url }}
+                  style={styles.avatarImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <UserRound size={isSmallScreen ? 32 : 40} color={COLORS.accent} />
+              )}
+              <View style={styles.avatarEditOverlay}>
+                {uploadingAvatar ? (
+                  <ActivityIndicator size="small" color={COLORS.background} />
+                ) : (
+                  <Camera size={16} color={COLORS.background} strokeWidth={2} />
+                )}
+              </View>
+            </TouchableOpacity>
             <View style={styles.heroInfo}>
               <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
                 {profile?.full_name || 'No name set'}
@@ -337,6 +475,45 @@ export default function ProfileScreen() {
         />
       </ScrollView>
       <ProfileMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
+      {/* Avatar Preview Modal */}
+      {profile?.avatar_url && (
+        <Modal
+          visible={avatarPreviewVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setAvatarPreviewVisible(false)}>
+          <TouchableOpacity
+            style={styles.previewOverlay}
+            activeOpacity={1}
+            onPress={() => setAvatarPreviewVisible(false)}>
+            <View style={styles.previewContainer} onStartShouldSetResponder={() => true}>
+              <Image
+                source={{ uri: profile.avatar_url }}
+                style={styles.previewImage}
+                resizeMode="cover"
+              />
+              <View style={styles.previewActions}>
+                <TouchableOpacity
+                  style={styles.previewButton}
+                  onPress={() => {
+                    setAvatarPreviewVisible(false);
+                    handleUploadAvatar();
+                  }}
+                  activeOpacity={0.7}>
+                  <Camera size={18} color={COLORS.background} strokeWidth={2} />
+                  <Text style={styles.previewButtonText}>Change Photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.previewButton, styles.previewCloseButton]}
+                  onPress={() => setAvatarPreviewVisible(false)}
+                  activeOpacity={0.7}>
+                  <Text style={styles.previewButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -399,6 +576,69 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: BORDER_RADIUS.full,
+  },
+  avatarEditOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.background,
+  },
+  previewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  previewContainer: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.surface,
+    overflow: 'hidden',
+  },
+  previewImage: {
+    width: '100%',
+    height: 320,
+    backgroundColor: COLORS.inputBackground,
+  },
+  previewActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: SPACING.md,
+    gap: SPACING.md,
+  },
+  previewButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.primary,
+  },
+  previewCloseButton: {
+    backgroundColor: COLORS.inputBackground,
+  },
+  previewButtonText: {
+    fontFamily: FONT_FAMILY.bodyBold,
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.background,
   },
   heroInfo: {
     flex: 1,

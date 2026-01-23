@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
-  FlatList,
   ActivityIndicator,
   Platform,
   ScrollView,
@@ -59,6 +58,7 @@ const SearchInput = React.memo(({
       autoCorrect={false}
       returnKeyType="search"
       clearButtonMode="while-editing"
+      {...(Platform.OS === 'web' && { outlineStyle: 'none' })}
     />
     {showSearchButton && (
       <TouchableOpacity
@@ -96,7 +96,14 @@ export default function FundingScreen() {
   // Separate states for input and applied search
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
+  // Ref to store latest searchInput value for stable handleSearchSubmit
+  const searchInputRef = useRef(searchInput);
   const params = useLocalSearchParams();
+
+  // Keep ref in sync with searchInput state
+  useEffect(() => {
+    searchInputRef.current = searchInput;
+  }, [searchInput]);
 
   const isInvestor = profile?.role === 'investor';
   const isFounder = profile?.role === 'founder' || profile?.role === 'cofounder';
@@ -170,9 +177,10 @@ export default function FundingScreen() {
     }
   }, [appliedSearch]);
 
+  // Stable handler that doesn't depend on searchInput to prevent renderHeader recreation
   const handleSearchSubmit = useCallback(() => {
-    setAppliedSearch(searchInput);
-  }, [searchInput]);
+    setAppliedSearch(searchInputRef.current);
+  }, []); // No dependencies - uses ref for latest value
 
   const handleSearchKeyPress = useCallback((e: any) => {
     if (e.nativeEvent.key === 'Enter') {
@@ -240,7 +248,9 @@ export default function FundingScreen() {
   );
 
   // Header component to be used in ListHeaderComponent
-  const renderHeader = () => (
+  // CRITICAL: Must be memoized with useCallback to prevent TextInput focus loss
+  // searchInput and appliedSearch are intentionally NOT in dependencies - they're passed as props to memoized SearchInput
+  const renderHeader = useCallback(() => (
     <View style={styles.headerContent}>
       <LinearGradient colors={GRADIENTS.primary} style={styles.heroCard}>
         <View style={styles.heroHeader}>
@@ -287,72 +297,19 @@ export default function FundingScreen() {
           <Text style={styles.createRequestButtonText}>Create Funding Request</Text>
         </TouchableOpacity>
       )}
-
-      <View style={styles.controls}>
-        <SearchInput
-          value={searchInput}
-          onChangeText={setSearchInput}
-          onSubmit={handleSearchSubmit}
-          onKeyPress={handleSearchKeyPress}
-          placeholder={isFounder ? "Search your requests..." : "Search companies, industries..."}
-          showSearchButton={searchInput.length > 0 && searchInput !== appliedSearch}
-          onSearchPress={handleSearchSubmit}
-        />
-
-        <View style={styles.actionButtons}>
-          {!isFounder && (
-            <TouchableOpacity
-              style={styles.filterButton}
-              onPress={() => setFilterModalVisible(true)}
-              activeOpacity={0.7}>
-              <Filter size={18} color={COLORS.primary} strokeWidth={2} />
-              {activeFilterCount > 0 && (
-                <View style={styles.filterBadge}>
-                  <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          )}
-
-          {!isFounder && (
-            <View style={styles.viewToggle}>
-              <TouchableOpacity
-                style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonActive]}
-                onPress={() => setViewMode('grid')}
-                activeOpacity={0.7}>
-                <Grid3x3
-                  size={18}
-                  color={viewMode === 'grid' ? COLORS.background : COLORS.textSecondary}
-                  strokeWidth={2}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.viewButton, viewMode === 'table' && styles.viewButtonActive]}
-                onPress={() => setViewMode('table')}
-                activeOpacity={0.7}>
-                <List
-                  size={18}
-                  color={viewMode === 'table' ? COLORS.background : COLORS.textSecondary}
-                  strokeWidth={2}
-                />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {activeFilterCount > 0 && (
-        <View style={styles.activeFilters}>
-          <Text style={styles.activeFiltersText}>
-            {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} applied
-          </Text>
-          <TouchableOpacity onPress={resetFilters}>
-            <Text style={styles.clearFiltersText}>Clear All</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
-  );
+  ), [
+    // Stable dependencies only
+    allOpportunities.length,
+    activeDeals,
+    totalRaised,
+    isFounder,
+    getSubtitle,
+    formatCurrency,
+    refresh,
+    setCreateRequestModalVisible,
+    user?.id,
+  ]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -361,39 +318,98 @@ export default function FundingScreen() {
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Loading opportunities...</Text>
         </View>
-      ) : opportunities.length === 0 ? (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}>
-          {renderHeader()}
-          {renderEmptyState()}
-        </ScrollView>
-      ) : viewMode === 'grid' || isFounder ? (
-        <FlatList
-          data={opportunities}
-          renderItem={({ item }) => (
-            <OpportunityCard
-              opportunity={item}
-              onPress={() => setSelectedOpportunity(item)}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          ListHeaderComponent={renderHeader}
-          contentContainerStyle={styles.gridContent}
-          showsVerticalScrollIndicator={false}
-        />
       ) : (
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}>
-          {renderHeader()}
-          <View style={styles.tableContainer}>
-            <OpportunityTable
-              opportunities={opportunities}
-              onPress={(opportunity) => setSelectedOpportunity(opportunity)}
-            />
+          showsVerticalScrollIndicator={true}>
+          <View style={styles.scrollPage}>
+            {renderHeader()}
+
+            <View style={styles.controls}>
+              <SearchInput
+                value={searchInput}
+                onChangeText={setSearchInput}
+                onSubmit={handleSearchSubmit}
+                onKeyPress={handleSearchKeyPress}
+                placeholder={isFounder ? "Search your requests..." : "Search companies, industries..."}
+                showSearchButton={searchInput.length > 0 && searchInput !== appliedSearch}
+                onSearchPress={handleSearchSubmit}
+              />
+
+              <View style={styles.actionButtons}>
+                {!isFounder && (
+                  <TouchableOpacity
+                    style={styles.filterButton}
+                    onPress={() => setFilterModalVisible(true)}
+                    activeOpacity={0.7}>
+                    <Filter size={18} color={COLORS.primary} strokeWidth={2} />
+                    {activeFilterCount > 0 && (
+                      <View style={styles.filterBadge}>
+                        <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                )}
+
+                {!isFounder && (
+                  <View style={styles.viewToggle}>
+                    <TouchableOpacity
+                      style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonActive]}
+                      onPress={() => setViewMode('grid')}
+                      activeOpacity={0.7}>
+                      <Grid3x3
+                        size={18}
+                        color={viewMode === 'grid' ? COLORS.background : COLORS.textSecondary}
+                        strokeWidth={2}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.viewButton, viewMode === 'table' && styles.viewButtonActive]}
+                      onPress={() => setViewMode('table')}
+                      activeOpacity={0.7}>
+                      <List
+                        size={18}
+                        color={viewMode === 'table' ? COLORS.background : COLORS.textSecondary}
+                        strokeWidth={2}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {activeFilterCount > 0 && (
+              <View style={styles.activeFilters}>
+                <Text style={styles.activeFiltersText}>
+                  {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} applied
+                </Text>
+                <TouchableOpacity onPress={resetFilters}>
+                  <Text style={styles.clearFiltersText}>Clear All</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {opportunities.length === 0 ? (
+              renderEmptyState()
+            ) : viewMode === 'grid' || isFounder ? (
+              <View style={styles.cardsContainer}>
+                {opportunities.map((item) => (
+                  <OpportunityCard
+                    key={item.id}
+                    opportunity={item}
+                    onPress={() => setSelectedOpportunity(item)}
+                  />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.tableContainer}>
+                <OpportunityTable
+                  opportunities={opportunities}
+                  onPress={(opportunity) => setSelectedOpportunity(opportunity)}
+                />
+              </View>
+            )}
           </View>
         </ScrollView>
       )}
@@ -523,16 +539,23 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: SPACING.xl,
   },
-  headerContent: {
+  scrollPage: {
     padding: SPACING.lg,
     gap: SPACING.lg,
-    backgroundColor: COLORS.background,
     ...(Platform.OS === 'web' && {
       maxWidth: 1200,
       alignSelf: 'center',
       width: '100%',
     }),
+  },
+  headerContent: {
+    gap: SPACING.lg,
+  },
+  cardsContainer: {
+    gap: SPACING.md,
+    paddingTop: 0,
   },
   emptyListContent: {
     flexGrow: 1,
@@ -733,10 +756,16 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
   },
   emptyContainer: {
-    flex: 1,
+    // Mobile-friendly empty state spacing/alignment
     justifyContent: 'center',
     alignItems: 'center',
-    padding: SPACING.xl,
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    width: '100%',
+    alignSelf: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 520,
+    }),
   },
   emptyTitle: {
     ...TYPOGRAPHY.title,
@@ -771,8 +800,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tableContainer: {
-    flex: 1,
-    padding: SPACING.lg,
     paddingTop: 0,
   },
   createRequestButton: {

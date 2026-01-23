@@ -87,6 +87,7 @@ export default function StartupProfileScreen() {
   const [isPublic, setIsPublic] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   
   // Social links state
   const [linkedinUrl, setLinkedinUrl] = useState('');
@@ -149,6 +150,8 @@ export default function StartupProfileScreen() {
 
           if (!isActive) return; // Check again before updating state
 
+          // Only update fields if no input is currently focused (to prevent interrupting user typing)
+          if (!isInputFocused) {
           // Update startup profile fields
           if (startupData) {
             setStartupName(startupData.name || '');
@@ -163,6 +166,7 @@ export default function StartupProfileScreen() {
             setDescription(ventureDescription || '');
             setStage(ventureStage || '');
             setIndustry(ventureIndustry || '');
+            }
           }
 
           // Update social links
@@ -678,12 +682,16 @@ export default function StartupProfileScreen() {
             label="Startup Name"
             value={startupName}
             onChangeText={setStartupName}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
             placeholder="Your startup name"
           />
           <Input
             label="Description"
             value={description}
             onChangeText={setDescription}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
             placeholder="What problem are you solving?"
             multiline
             numberOfLines={4}
@@ -704,6 +712,8 @@ export default function StartupProfileScreen() {
             label="Website"
             value={website}
             onChangeText={setWebsite}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
             placeholder="https://yourstartup.com"
           />
         </View>
