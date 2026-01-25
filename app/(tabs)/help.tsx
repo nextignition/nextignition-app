@@ -7,11 +7,9 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { Input } from '@/components/Input';
-import { Button } from '@/components/Button';
 import {
   BORDER_RADIUS,
   COLORS,
@@ -24,12 +22,11 @@ import {
 } from '@/constants/theme';
 import {
   HelpCircle,
-  MessageSquare,
+  Mail,
   BookOpen,
   Video,
   FileText,
   Search,
-  Send,
   ChevronRight,
 } from 'lucide-react-native';
 
@@ -81,33 +78,18 @@ const FAQ_CATEGORIES = [
   },
 ];
 
-const SUPPORT_TOPICS = [
-  { id: 'bug', label: 'Report a Bug', icon: HelpCircle },
-  { id: 'feature', label: 'Feature Request', icon: MessageSquare },
-  { id: 'account', label: 'Account Issue', icon: FileText },
-  { id: 'payment', label: 'Payment Issue', icon: FileText },
-];
+const SUPPORT_EMAIL = 'support@nextignition.com';
 
 export default function HelpScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [supportTopic, setSupportTopic] = useState('');
-  const [supportMessage, setSupportMessage] = useState('');
-  const [sending, setSending] = useState(false);
 
-  const handleSendSupport = async () => {
-    if (!supportTopic || !supportMessage) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    setSending(true);
-    setTimeout(() => {
-      setSending(false);
-      setSupportTopic('');
-      setSupportMessage('');
-      alert('Support request submitted! We\'ll get back to you soon.');
-    }, 1500);
+  const handleMailSupport = () => {
+    const mailtoUrl = `mailto:${SUPPORT_EMAIL}`;
+    Linking.openURL(mailtoUrl).catch((err) => {
+      console.error('Failed to open email client:', err);
+      alert('Unable to open email client. Please email us at ' + SUPPORT_EMAIL);
+    });
   };
 
   return (
@@ -191,58 +173,18 @@ export default function HelpScreen() {
           <Text style={styles.sectionTitle}>Contact Support</Text>
           <View style={styles.supportCard}>
             <Text style={styles.supportSubtitle}>
-              Can&apos;t find what you&apos;re looking for? Send us a message
+              Can&apos;t find what you&apos;re looking for? Email us directly
             </Text>
-            <View style={styles.supportTopics}>
-              {SUPPORT_TOPICS.map((topic) => {
-                const Icon = topic.icon;
-                return (
-                  <TouchableOpacity
-                    key={topic.id}
-                    style={[
-                      styles.supportTopicButton,
-                      supportTopic === topic.id && styles.supportTopicButtonActive,
-                    ]}
-                    onPress={() => setSupportTopic(topic.id)}
-                    activeOpacity={0.7}>
-                    <Icon
-                      size={18}
-                      color={supportTopic === topic.id ? COLORS.primary : COLORS.textSecondary}
-                      strokeWidth={2}
-                    />
-                    <Text
-                      style={[
-                        styles.supportTopicText,
-                        supportTopic === topic.id && styles.supportTopicTextActive,
-                      ]}>
-                      {topic.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+            <View style={styles.emailContainer}>
+              <Mail size={24} color={COLORS.primary} strokeWidth={2} />
+              <Text style={styles.emailText}>{SUPPORT_EMAIL}</Text>
             </View>
-            <Input
-              label="Message"
-              value={supportMessage}
-              onChangeText={setSupportMessage}
-              placeholder="Describe your issue or question..."
-              multiline
-              numberOfLines={6}
-            />
-            <Button
-              title="Send Message"
-              onPress={handleSendSupport}
-              loading={sending}
-              disabled={!supportTopic || !supportMessage || sending}
-              style={styles.sendButton}
-              icon={<Send size={20} color={COLORS.background} strokeWidth={2} />}
-            />
             <TouchableOpacity
-              style={styles.chatButton}
-              onPress={() => router.push('/(tabs)/chat?support=true')}
+              style={styles.mailButton}
+              onPress={handleMailSupport}
               activeOpacity={0.7}>
-              <MessageSquare size={20} color={COLORS.primary} strokeWidth={2} />
-              <Text style={styles.chatButtonText}>Or chat with support directly</Text>
+              <Mail size={20} color={COLORS.background} strokeWidth={2} />
+              <Text style={styles.mailButtonText}>Mail Us</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -385,60 +327,42 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.sm,
-    gap: SPACING.md,
+    gap: SPACING.lg,
+    alignItems: 'center',
   },
   supportSubtitle: {
     ...TYPOGRAPHY.body,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    marginBottom: SPACING.sm,
   },
-  supportTopics: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  supportTopicButton: {
+  emailContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.surfaceMuted,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    justifyContent: 'center',
+    gap: SPACING.md,
+    paddingVertical: SPACING.md,
   },
-  supportTopicButtonActive: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary,
+  emailText: {
+    ...TYPOGRAPHY.title,
+    fontFamily: FONT_FAMILY.displayMedium,
+    color: COLORS.text,
+    fontSize: FONT_SIZES.lg,
   },
-  supportTopicText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
-    fontFamily: FONT_FAMILY.bodyMedium,
-  },
-  supportTopicTextActive: {
-    color: COLORS.primary,
-    fontFamily: FONT_FAMILY.bodyBold,
-  },
-  sendButton: {
-    marginTop: SPACING.sm,
-  },
-  chatButton: {
+  mailButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
     paddingVertical: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
+    paddingHorizontal: SPACING.xl,
+    backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.md,
+    ...SHADOWS.sm,
   },
-  chatButtonText: {
+  mailButtonText: {
     ...TYPOGRAPHY.bodyStrong,
-    color: COLORS.primary,
+    color: COLORS.background,
     fontFamily: FONT_FAMILY.bodyBold,
+    fontSize: FONT_SIZES.md,
   },
 });

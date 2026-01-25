@@ -37,15 +37,58 @@ export function useConnections() {
         .from('connections')
         .select(`
           *,
-          requester:profiles!connections_requester_id_fkey(*),
-          target:profiles!connections_target_id_fkey(*)
+          requester:requester_id(*),
+          target:target_id(*)
         `)
         .or(`requester_id.eq.${user.id},target_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching connections:', fetchError);
+        throw fetchError;
+      }
 
-      const allConnections = data || [];
+      let allConnections = data || [];
+      
+      // If profiles weren't loaded via join, fetch them separately
+      const connectionIds = allConnections.map(c => c.id);
+      const userIds = new Set<string>();
+      allConnections.forEach(c => {
+        if (c.requester_id) userIds.add(c.requester_id);
+        if (c.target_id) userIds.add(c.target_id);
+      });
+
+      // Fetch profiles if they weren't included
+      if (allConnections.length > 0 && (!allConnections[0].requester || !allConnections[0].target)) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', Array.from(userIds));
+
+        if (profilesData) {
+          const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+          allConnections = allConnections.map(c => ({
+            ...c,
+            requester: c.requester || profilesMap.get(c.requester_id),
+            target: c.target || profilesMap.get(c.target_id),
+          }));
+        }
+      }
+      
+      // Log for debugging
+      console.log('Fetched connections:', {
+        total: allConnections.length,
+        connections: allConnections.map(c => ({
+          id: c.id,
+          status: c.status,
+          requester_id: c.requester_id,
+          target_id: c.target_id,
+          hasRequester: !!c.requester,
+          hasTarget: !!c.target,
+          requesterName: c.requester?.full_name || c.requester?.email,
+          targetName: c.target?.full_name || c.target?.email,
+        })),
+      });
 
       // Separate into categories
       const accepted = allConnections.filter(c => c.status === 'accepted');

@@ -9,7 +9,10 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, TrendingUp, Calendar, Users, Award, Target, Megaphone } from 'lucide-react-native';
 import {
   BORDER_RADIUS,
@@ -42,6 +45,7 @@ export function CreatePostModal({ visible, onClose, onCreatePost }: CreatePostMo
   const [content, setContent] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleCreate = async () => {
     if (!content.trim()) {
@@ -88,98 +92,107 @@ export function CreatePostModal({ visible, onClose, onCreatePost }: CreatePostMo
       animationType="slide"
       transparent={true}
       onRequestClose={handleClose}>
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Create Post</Text>
-            <TouchableOpacity onPress={handleClose} disabled={loading} style={styles.closeButton}>
-              <X size={24} color={COLORS.text} strokeWidth={2} />
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.overlay}
+        keyboardVerticalOffset={0}>
+        <View style={styles.overlay}>
+          <View style={[styles.modalContainer, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Create Post</Text>
+              <TouchableOpacity onPress={handleClose} disabled={loading} style={styles.closeButton}>
+                <X size={24} color={COLORS.text} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Post Type Selection */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Post Type</Text>
-              <View style={styles.typeGrid}>
-                {POST_TYPES.map((type) => {
-                  const IconComponent = type.icon;
-                  const isSelected = selectedType === type.value;
-                  return (
-                    <TouchableOpacity
-                      key={type.value}
-                      style={[
-                        styles.typeOption,
-                        isSelected && { backgroundColor: `${type.color}15`, borderColor: type.color },
-                      ]}
-                      onPress={() => setSelectedType(type.value)}
-                      disabled={loading}>
-                      <View style={[styles.typeIcon, { backgroundColor: `${type.color}20` }]}>
-                        <IconComponent size={20} color={type.color} strokeWidth={2} />
-                      </View>
-                      <Text style={[styles.typeLabel, isSelected && { color: type.color }]}>
-                        {type.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+            <ScrollView 
+              style={styles.content} 
+              contentContainerStyle={styles.contentContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled">
+              {/* Post Type Selection */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Post Type</Text>
+                <View style={styles.typeGrid}>
+                  {POST_TYPES.map((type) => {
+                    const IconComponent = type.icon;
+                    const isSelected = selectedType === type.value;
+                    return (
+                      <TouchableOpacity
+                        key={type.value}
+                        style={[
+                          styles.typeOption,
+                          isSelected && { backgroundColor: `${type.color}15`, borderColor: type.color },
+                        ]}
+                        onPress={() => setSelectedType(type.value)}
+                        disabled={loading}>
+                        <View style={[styles.typeIcon, { backgroundColor: `${type.color}20` }]}>
+                          <IconComponent size={20} color={type.color} strokeWidth={2} />
+                        </View>
+                        <Text style={[styles.typeLabel, isSelected && { color: type.color }]}>
+                          {type.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
 
-            {/* Company Name (Optional) */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Company Name (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter company name"
-                placeholderTextColor={COLORS.textSecondary}
-                value={companyName}
-                onChangeText={setCompanyName}
-                editable={!loading}
-                maxLength={100}
-              />
-            </View>
+              {/* Company Name (Optional) */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Company Name (Optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter company name"
+                  placeholderTextColor={COLORS.textSecondary}
+                  value={companyName}
+                  onChangeText={setCompanyName}
+                  editable={!loading}
+                  maxLength={100}
+                />
+              </View>
 
-            {/* Post Content */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>What's on your mind?</Text>
-              <TextInput
-                style={styles.textArea}
-                placeholder="Share your thoughts, achievements, or updates..."
-                placeholderTextColor={COLORS.textSecondary}
-                value={content}
-                onChangeText={setContent}
-                multiline
-                numberOfLines={6}
-                textAlignVertical="top"
-                editable={!loading}
-                maxLength={1000}
-              />
-              <Text style={styles.charCount}>{content.length}/1000</Text>
-            </View>
-          </ScrollView>
+              {/* Post Content */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>What's on your mind?</Text>
+                <TextInput
+                  style={styles.textArea}
+                  placeholder="Share your thoughts, achievements, or updates..."
+                  placeholderTextColor={COLORS.textSecondary}
+                  value={content}
+                  onChangeText={setContent}
+                  multiline
+                  numberOfLines={6}
+                  textAlignVertical="top"
+                  editable={!loading}
+                  maxLength={1000}
+                />
+                <Text style={styles.charCount}>{content.length}/1000</Text>
+              </View>
+            </ScrollView>
 
-          {/* Actions */}
-          <View style={styles.actions}>
-            <TouchableOpacity
-              style={[styles.cancelButton, loading && styles.buttonDisabled]}
-              onPress={handleClose}
-              disabled={loading}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.createButton, loading && styles.buttonDisabled]}
-              onPress={handleCreate}
-              disabled={loading || !content.trim()}>
-              {loading ? (
-                <ActivityIndicator size="small" color={COLORS.background} />
-              ) : (
-                <Text style={styles.createButtonText}>Post</Text>
-              )}
-            </TouchableOpacity>
+            {/* Actions */}
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={[styles.cancelButton, loading && styles.buttonDisabled]}
+                onPress={handleClose}
+                disabled={loading}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.createButton, loading && styles.buttonDisabled]}
+                onPress={handleCreate}
+                disabled={loading || !content.trim()}>
+                {loading ? (
+                  <ActivityIndicator size="small" color={COLORS.background} />
+                ) : (
+                  <Text style={styles.createButtonText}>Post</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -194,7 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
-    maxHeight: '90%',
+    maxHeight: Platform.OS === 'android' ? '95%' : '90%',
     ...SHADOWS.lg,
   },
   header: {
@@ -216,6 +229,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: SPACING.lg,
+  },
+  contentContainer: {
+    paddingBottom: SPACING.md,
   },
   section: {
     marginBottom: SPACING.xl,
@@ -283,9 +299,12 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: SPACING.md,
-    padding: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
+    backgroundColor: COLORS.surface,
   },
   cancelButton: {
     flex: 1,

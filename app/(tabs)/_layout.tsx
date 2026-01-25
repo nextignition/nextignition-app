@@ -387,6 +387,12 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="connections"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

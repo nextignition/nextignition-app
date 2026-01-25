@@ -70,12 +70,19 @@ export default function InvestorDashboard() {
             </View>
           </View>
           <View style={styles.statsRow}>
-            {QUICK_STATS.map((stat) => (
-              <View key={stat.label} style={styles.statCard}>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
-              </View>
-            ))}
+            {QUICK_STATS.map((stat) => {
+              const StatComponent = stat.label === 'Connections' ? TouchableOpacity : View;
+              return (
+                <StatComponent
+                  key={stat.label}
+                  style={styles.statCard}
+                  onPress={stat.label === 'Connections' ? () => router.push('/(tabs)/connections') : undefined}
+                  activeOpacity={stat.label === 'Connections' ? 0.7 : 1}>
+                  <Text style={styles.statValue}>{stat.value}</Text>
+                  <Text style={styles.statLabel}>{stat.label}</Text>
+                </StatComponent>
+              );
+            })}
           </View>
         </LinearGradient>
 

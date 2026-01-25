@@ -982,6 +982,132 @@ export function useTypingIndicator(conversationId: string | null) {
   return { typingUsers, startTyping, stopTyping };
 }
 
+// Helper function to get or create a support conversation
+export async function getOrCreateSupportConversation(
+  userId: string
+): Promise<{ conversationId: string | null; error: string | null }> {
+  try {
+    console.log('getOrCreateSupportConversation:', { userId });
+    
+    // First, try to find a support user profile
+    // Look for support email first, then admin user
+    let supportProfiles = null;
+    let supportError = null;
+    
+    // Try to find support email first
+    const { data: supportEmailProfile, error: emailError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role')
+      .eq('email', 'support@nextignition.com')
+      .limit(1)
+      .maybeSingle();
+    
+    if (supportEmailProfile) {
+      supportProfiles = supportEmailProfile;
+    } else {
+      // If no support email found, try to find any admin user
+      const { data: adminProfile, error: adminError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, role')
+        .eq('role', 'admin')
+        .limit(1)
+        .maybeSingle();
+      
+      if (adminProfile) {
+        supportProfiles = adminProfile;
+      } else {
+        supportError = adminError || emailError;
+      }
+    }
+
+    let supportUserId: string | null = null;
+    let supportUserName = 'Support Team';
+
+    if (supportProfiles) {
+      supportUserId = supportProfiles.id;
+      supportUserName = supportProfiles.full_name || 'Support Team';
+      console.log('Found support profile:', { supportUserId, supportUserName });
+    } else {
+      if (supportError) {
+        console.error('Error finding support profile:', supportError);
+      }
+      console.warn('No support or admin profile found, cannot create support conversation');
+      return { conversationId: null, error: 'Support team not available. Please contact support@nextignition.com' };
+    }
+
+    if (!supportUserId) {
+      return { conversationId: null, error: 'Support team not available' };
+    }
+
+    // Prevent self-conversations
+    if (userId === supportUserId) {
+      console.error('Cannot create support conversation with yourself');
+      return { conversationId: null, error: 'Cannot create support conversation with yourself' };
+    }
+
+    // Check if conversation already exists
+    const { data: existingMembers, error: memberError } = await supabase
+      .from('conversation_members')
+      .select('conversation_id, conversations:conversation_id(is_group)')
+      .eq('profile_id', userId);
+
+    if (memberError) throw memberError;
+
+    // Find direct conversation with support user
+    for (const member of existingMembers || []) {
+      const conv = (member as any).conversations;
+      if (conv && !conv.is_group) {
+        // Check if support user is also a member
+        const { data: supportMember, error: supportMemberError } = await supabase
+          .from('conversation_members')
+          .select('id')
+          .eq('conversation_id', member.conversation_id)
+          .eq('profile_id', supportUserId)
+          .single();
+
+        if (!supportMemberError && supportMember) {
+          console.log('Found existing support conversation:', member.conversation_id);
+          return { conversationId: member.conversation_id, error: null };
+        }
+      }
+    }
+
+    console.log('No existing support conversation found, creating new one...');
+
+    // Create new support conversation
+    const { data: newConv, error: convError } = await supabase
+      .from('conversations')
+      .insert({
+        title: supportUserName,
+        is_group: false,
+        metadata: {
+          type: 'support',
+          is_support_conversation: true,
+        },
+      })
+      .select()
+      .single();
+
+    if (convError) throw convError;
+
+    // Add both users as members
+    const { error: membersError } = await supabase
+      .from('conversation_members')
+      .insert([
+        { conversation_id: newConv.id, profile_id: userId },
+        { conversation_id: newConv.id, profile_id: supportUserId },
+      ]);
+
+    if (membersError) throw membersError;
+
+    console.log('Successfully created support conversation:', newConv.id);
+    return { conversationId: newConv.id, error: null };
+  } catch (err: any) {
+    console.error('Error creating support conversation:', err);
+    return { conversationId: null, error: err.message || 'Failed to create support conversation' };
+  }
+}
+
 // Helper function to create or get a direct conversation between two users
 export async function getOrCreateDirectConversation(
   userId: string,

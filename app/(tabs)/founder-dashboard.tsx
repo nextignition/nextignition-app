@@ -342,10 +342,13 @@ export default function FounderDashboard() {
             </View>
           </View>
           <View style={styles.statsRow}>
-            <View style={styles.statCard}>
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => router.push('/(tabs)/connections')}
+              activeOpacity={0.7}>
               <Text style={styles.statValue}>{stats.totalConnections || 0}</Text>
               <Text style={styles.statLabel}>Connections</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{stats.totalChats || 0}</Text>
               <Text style={styles.statLabel}>Active Chats</Text>

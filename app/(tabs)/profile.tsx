@@ -367,11 +367,14 @@ export default function ProfileScreen() {
         {/* Stats Card */}
         {stats && (
           <View style={styles.statsCard}>
-            <View style={styles.statItem}>
+            <TouchableOpacity
+              style={styles.statItem}
+              onPress={() => router.push('/(tabs)/connections')}
+              activeOpacity={0.7}>
               <Users size={20} color={COLORS.primary} />
               <Text style={styles.statValue}>{stats.totalConnections || 0}</Text>
               <Text style={styles.statLabel}>Connections</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <MessageSquare size={20} color={COLORS.primary} />

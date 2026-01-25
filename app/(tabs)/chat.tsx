@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { useConversations, useMessages, useTypingIndicator, useBroadcastPresence, usePresence, markMessagesAsRead } from '@/hooks/useChat';
+import { useConversations, useMessages, useTypingIndicator, useBroadcastPresence, usePresence, markMessagesAsRead, getOrCreateSupportConversation } from '@/hooks/useChat';
 import { supabase } from '@/lib/supabase';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -200,10 +200,53 @@ export default function ChatScreen() {
     });
   }, [typingUsers, selectedConversation?.id]);
 
-  // Handle opening conversation from params (from network page)
+  // Handle opening conversation from params (from network page or support)
   useEffect(() => {
     console.log('Chat params:', params);
     console.log('Conversations count:', conversations.length);
+    
+    // Handle support conversation request
+    if (params.support === 'true' && profile?.id) {
+      console.log('Support conversation requested');
+      getOrCreateSupportConversation(profile.id).then(({ conversationId, error }) => {
+        if (error) {
+          console.error('Error creating support conversation:', error);
+          Alert.alert('Error', error);
+          return;
+        }
+        
+        if (conversationId) {
+          console.log('Support conversation created/found:', conversationId);
+          // Find the conversation in the list
+          const supportConv = conversations.find(c => c.id === conversationId);
+          if (supportConv) {
+            setSelectedConversation(supportConv);
+            setActiveTab('direct');
+          } else {
+            // Create minimal conversation object and refresh
+            const minimalConv: Conversation = {
+              id: conversationId,
+              type: 'direct',
+              name: 'Support Team',
+              description: undefined,
+              last_message: undefined,
+              last_message_at: new Date().toISOString(),
+              unread_count: 0,
+              members: [],
+              created_at: new Date().toISOString(),
+              is_online: false,
+            };
+            setSelectedConversation(minimalConv);
+            setActiveTab('direct');
+            // Refresh to get the full conversation details
+            if (refresh) {
+              setTimeout(() => refresh(), 500);
+            }
+          }
+        }
+      });
+      return;
+    }
     
     if (params.conversationId) {
       const convId = params.conversationId as string;
@@ -241,7 +284,7 @@ export default function ChatScreen() {
         }
       }
     }
-  }, [params.conversationId, params.userName, conversations, refresh]);
+  }, [params.conversationId, params.userName, params.support, conversations, refresh, profile?.id]);
 
   // Mark messages as read when screen is focused and conversation is open
   useFocusEffect(
