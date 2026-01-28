@@ -20,7 +20,7 @@ import {
   SPACING,
   TYPOGRAPHY,
 } from '@/constants/theme';
-import { UserRound, MapPin, Pencil, ExternalLink, MoreVertical, Mail, Briefcase, Award, TrendingUp, Users, MessageSquare, Camera } from 'lucide-react-native';
+import { UserRound, MapPin, Pencil, ExternalLink, MoreVertical, Mail, Briefcase, Award, TrendingUp, Users, MessageSquare } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 const isSmallScreen = width < 380;
@@ -311,13 +311,6 @@ export default function ProfileScreen() {
               ) : (
                 <UserRound size={isSmallScreen ? 32 : 40} color={COLORS.accent} />
               )}
-              <View style={styles.avatarEditOverlay}>
-                {uploadingAvatar ? (
-                  <ActivityIndicator size="small" color={COLORS.background} />
-                ) : (
-                  <Camera size={16} color={COLORS.background} strokeWidth={2} />
-                )}
-              </View>
             </TouchableOpacity>
             <View style={styles.heroInfo}>
               <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
@@ -503,7 +496,6 @@ export default function ProfileScreen() {
                     handleUploadAvatar();
                   }}
                   activeOpacity={0.7}>
-                  <Camera size={18} color={COLORS.background} strokeWidth={2} />
                   <Text style={styles.previewButtonText}>Change Photo</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -586,19 +578,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: BORDER_RADIUS.full,
-  },
-  avatarEditOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.background,
   },
   previewOverlay: {
     flex: 1,

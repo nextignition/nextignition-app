@@ -388,6 +388,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="create-post"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="connections"
         options={{
           href: null,

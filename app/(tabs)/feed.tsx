@@ -13,6 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import {
   BORDER_RADIUS,
   COLORS,
@@ -310,7 +311,7 @@ export default function FeedScreen() {
             </Text>
             <TouchableOpacity
               style={styles.emptyCreateButton}
-              onPress={() => setShowCreateModal(true)}
+              onPress={() => router.push('/(tabs)/create-post')}
               activeOpacity={0.8}>
               <Plus size={20} color={COLORS.background} strokeWidth={2} />
               <Text style={styles.emptyCreateButtonText}>Create Your First Post</Text>

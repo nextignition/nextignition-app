@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,7 +25,6 @@ import {
   BookOpen,
   Video,
   FileText,
-  Search,
   ChevronRight,
 } from 'lucide-react-native';
 
@@ -81,7 +79,6 @@ const FAQ_CATEGORIES = [
 const SUPPORT_EMAIL = 'support@nextignition.com';
 
 export default function HelpScreen() {
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const handleMailSupport = () => {
@@ -110,19 +107,6 @@ export default function HelpScreen() {
             </View>
           </View>
         </LinearGradient>
-
-        <View style={styles.searchSection}>
-          <View style={styles.searchContainer}>
-            <Search size={20} color={COLORS.textSecondary} strokeWidth={2} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search help articles..."
-              placeholderTextColor={COLORS.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
@@ -232,27 +216,6 @@ const styles = StyleSheet.create({
   heroSubtitle: {
     ...TYPOGRAPHY.body,
     color: 'rgba(255,255,255,0.85)',
-  },
-  searchSection: {
-    gap: SPACING.md,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    height: 52,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: SPACING.sm,
-    ...SHADOWS.xs,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: FONT_FAMILY.body,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text,
   },
   section: {
     gap: SPACING.md,
