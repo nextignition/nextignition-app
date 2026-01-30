@@ -35,7 +35,7 @@
     },
     "android": {
       "package": "com.itsdeligh.hustlrhub",
-      "versionCode": 11,
+      "versionCode": 16,
       "minSdkVersion": 21,
       "targetSdkVersion": 34,
       "permissions": [

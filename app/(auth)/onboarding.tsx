@@ -147,12 +147,12 @@ export default function OnboardingScreen() {
 
   const validateStep = (): boolean => {
     const newErrors: Partial<Record<keyof OnboardingData, string>> = {};
-    
+
     // Safety check - ensure steps and currentStep are valid
     if (!steps || steps.length === 0 || !steps[currentStep]) {
       return false;
     }
-    
+
     const stepId = steps[currentStep]?.id;
 
     if (stepId === 'personal') {
@@ -195,8 +195,8 @@ export default function OnboardingScreen() {
           newErrors.investmentRange = 'Investment range is required';
         }
       } else if (profile?.role === 'expert') {
-        const expertiseAreasStr = Array.isArray(data.expertiseAreas) 
-          ? data.expertiseAreas.join(', ') 
+        const expertiseAreasStr = Array.isArray(data.expertiseAreas)
+          ? data.expertiseAreas.join(', ')
           : (data.expertiseAreas as string || '');
         if (!expertiseAreasStr.trim()) {
           newErrors.expertiseAreas = 'Expertise areas are required';
@@ -275,7 +275,7 @@ export default function OnboardingScreen() {
         payload.venture_industry = data.ventureIndustry?.trim() || null;
         payload.venture_stage = data.ventureStage?.trim() || null;
         payload.investment_range = data.investmentRange?.trim() || null;
-        payload.portfolio_size = data.portfolioSize 
+        payload.portfolio_size = data.portfolioSize
           ? (typeof data.portfolioSize === 'string' ? parseInt(data.portfolioSize) : data.portfolioSize)
           : null;
         payload.investment_focus = data.investmentFocus?.trim() || null;
@@ -283,11 +283,11 @@ export default function OnboardingScreen() {
 
       if (profile?.role === 'expert') {
         // Handle expertise_areas - convert to array if string
-        const expertiseAreas = Array.isArray(data.expertiseAreas) 
-          ? data.expertiseAreas 
-          : (typeof data.expertiseAreas === 'string' 
-              ? data.expertiseAreas.split(',').map(a => a.trim()).filter(Boolean)
-              : []);
+        const expertiseAreas = Array.isArray(data.expertiseAreas)
+          ? data.expertiseAreas
+          : (typeof data.expertiseAreas === 'string'
+            ? data.expertiseAreas.split(',').map(a => a.trim()).filter(Boolean)
+            : []);
         payload.expertise_areas = expertiseAreas.length > 0 ? expertiseAreas : null;
         payload.years_experience = data.yearsExperience ?? null;
         payload.hourly_rate = data.hourlyRate ?? null;
@@ -354,7 +354,7 @@ export default function OnboardingScreen() {
       try {
         await Promise.race([
           refreshProfile(),
-          new Promise((_, reject) => 
+          new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Profile refresh timeout')), 10000)
           ),
         ]);
@@ -413,10 +413,10 @@ export default function OnboardingScreen() {
     if (!steps || steps.length === 0 || !steps[currentStep]) {
       return null;
     }
-    
+
     const stepId = steps[currentStep]?.id;
     const role = profile?.role;
-    
+
     if (!role) {
       return null;
     }
@@ -452,36 +452,37 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}>
-        <View style={styles.content}>
+        style={styles.keyboardView}
+        keyboardVerticalOffset={0}>
+        <View style={styles.header}>
           <ProgressIndicator steps={steps} currentStep={currentStep} />
+        </View>
 
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled">
-            {renderStep()}
-          </ScrollView>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+          {renderStep()}
+        </ScrollView>
 
-          <View style={styles.footer}>
-            {submitError && <Text style={styles.submitError}>{submitError}</Text>}
-            <View style={styles.buttonRow}>
-              {currentStep > 0 && (
-                <Button
-                  title="Back"
-                  onPress={handleBack}
-                  variant="outline"
-                  style={styles.backButton}
-                />
-              )}
+        <View style={styles.footer}>
+          {submitError && <Text style={styles.submitError}>{submitError}</Text>}
+          <View style={styles.buttonRow}>
+            {currentStep > 0 && (
               <Button
-                title={currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-                onPress={currentStep === steps.length - 1 ? handleComplete : handleNext}
-                loading={loading}
-                style={styles.nextButton}
+                title="Back"
+                onPress={handleBack}
+                variant="outline"
+                style={styles.backButton}
               />
-            </View>
+            )}
+            <Button
+              title={currentStep === steps.length - 1 ? 'Complete' : 'Next'}
+              onPress={currentStep === steps.length - 1 ? handleComplete : handleNext}
+              loading={loading}
+              style={styles.nextButton}
+            />
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -497,19 +498,25 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    padding: SPACING.lg,
+  header: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
+    paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.lg,
   },
   footer: {
     gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
+    paddingBottom: SPACING.lg,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
   submitError: {
     color: COLORS.error,
